@@ -1,14 +1,15 @@
 from flask import Flask
+from config import BaseConfig
 
 
 def create_app():
-    server = Flask(__name__)
-    server.config.from_object('deployment.development')
+    app = Flask(__name__)
+    app.config.from_object(BaseConfig)
 
-    register_extensions(server)
-    register_blueprints(server)
+    register_extensions(app)
+    register_blueprints(app)
 
-    return server
+    return app
 
 
 def register_extensions(app):
@@ -18,7 +19,7 @@ def register_extensions(app):
     migrate.init_app(app)
 
 
-def register_blueprints(server):
+def register_blueprints(app):
     from app.views.home import home
 
-    server.register_blueprint(home)
+    app.register_blueprint(home)
