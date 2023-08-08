@@ -1,10 +1,11 @@
 from flask import Flask
-from config import BaseConfig
+from config import BaseConfig, AzureConfig
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(BaseConfig)
+    # app.config.from_object(BaseConfig)
+    app.config.from_object(AzureConfig)
 
     app.config.update(
         SQLALCHEMY_DATABASE_URI=app.config.get('SQLALCHEMY_DATABASE_URI'),
