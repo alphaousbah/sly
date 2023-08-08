@@ -1,5 +1,5 @@
 from flask import Flask
-from config import BaseConfig, AzureConfig
+from config import BaseConfig
 
 
 def create_app():
