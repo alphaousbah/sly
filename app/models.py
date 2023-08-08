@@ -1,7 +1,6 @@
+from app.extensions import db
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
-
-from app.extensions import db
 
 
 class Restaurant(db.Model):
