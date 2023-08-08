@@ -1,4 +1,4 @@
-from app.extensions import db
+from flaskapp.extensions import db
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
 
