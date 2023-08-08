@@ -6,6 +6,11 @@ def create_app():
     server = Flask(__name__)
     server.config.from_object(BaseConfig)
 
+    server.config.update(
+        SQLALCHEMY_DATABASE_URI=server.config.get('SQLALCHEMY_DATABASE_URI'),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    )
+
     register_extensions(server)
     register_blueprints(server)
 
@@ -13,10 +18,11 @@ def create_app():
 
 
 def register_extensions(server):
-    from app.extensions import db, migrate
+    from app.extensions import db
+    from app.extensions import migrate
 
     db.init_app(server)
-    migrate.init_app(server)
+    migrate.init_app(server, db)
 
 
 def register_blueprints(server):
