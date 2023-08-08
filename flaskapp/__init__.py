@@ -4,12 +4,7 @@ from config import BaseConfig, AzureConfig
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(AzureConfig)
-
-    app.config.update(
-        SQLALCHEMY_DATABASE_URI=app.config.get('SQLALCHEMY_DATABASE_URI'),
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    )
+    app.config.from_object(BaseConfig)
 
     register_extensions(app)
     register_blueprints(app)
