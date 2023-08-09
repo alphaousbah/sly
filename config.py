@@ -23,22 +23,22 @@ class BaseConfig:
 #     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
-# class AzureConfig:
-#     SECRET_KEY = os.environ['SECRET_KEY']
-#
-#     ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
-#     CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
-#
-#     # Configure Postgres database based on connection string
-#     # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
-#     conn_str = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
-#     conn_str_params = {pair.split('=')[0]: pair.split('=')[1] for pair in conn_str.split(' ')}
-#
-#     DATABASE_URI = 'postgresql+psycopg2://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-#         dbuser=conn_str_params['user'],
-#         dbpass=conn_str_params['password'],
-#         dbhost=conn_str_params['host'],
-#         dbname=conn_str_params['dbname']
-#     )
-#
-#     SQLALCHEMY_TRACK_MODIFICATIONS = False
+class AzurePostgresConfig:
+    SECRET_KEY = os.environ['SECRET_KEY']
+
+    # ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
+    # CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['WEBSITE_HOSTNAME']] if 'WEBSITE_HOSTNAME' in os.environ else []
+
+    # Configure Postgres database based on connection string
+    # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+    conn_str = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
+    conn_str_params = {pair.split('=')[0]: pair.split('=')[1] for pair in conn_str.split(' ')}
+
+    DATABASE_URI = 'postgresql+psycopg2://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
+        dbuser=conn_str_params['user'],
+        dbpass=conn_str_params['password'],
+        dbhost=conn_str_params['host'],
+        dbname=conn_str_params['dbname']
+    )
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
