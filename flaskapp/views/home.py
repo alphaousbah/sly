@@ -8,4 +8,4 @@ home = Blueprint('home', __name__)
 def index():
     print('Request for index page received')
     restaurants = Restaurant.query.all()
-    return render_template('home/index.html')
+    return render_template('home/index.html', restaurants=restaurants)

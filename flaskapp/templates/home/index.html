@@ -1,4 +1,8 @@
+{% extends "base.html" %}
+
 {% block content %}
-<h1>Restaurant guide</h1>
-<p>Here is a list of restaurants</p>
+    <h1>Home</h1>
+    {% for restaurant in restaurants %}
+        <div><p>{{ restaurant.name }} is {{ restaurant.description }}</p></div>
+    {% endfor %}
 {% endblock %}

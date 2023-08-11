@@ -1,10 +1,10 @@
 from flask import Flask
-from config import BaseConfig, AzurePostgresConfig
+from config import Config
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(AzurePostgresConfig)
+    app.config.from_object(Config)
 
     register_extensions(app)
     register_blueprints(app)
