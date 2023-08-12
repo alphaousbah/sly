@@ -1,6 +1,7 @@
 from flask import Flask
 from config import Config
 from dash import Dash
+import dash_bootstrap_components as dbc
 from flask.helpers import get_root_path
 
 
@@ -42,9 +43,10 @@ def register_dashapp(app):
         server=app,
         url_base_pathname='/dashboard/',
         assets_folder=get_root_path(__name__) + '/dashboard/assets/',
-        meta_tags=[meta_viewport]
+        meta_tags=[meta_viewport],
+        external_stylesheets=[dbc.themes.COSMO]
     )
 
     with app.app_context():
         dashapp.layout = layout
-        register_callbacks((dashapp))
+    register_callbacks((dashapp))
