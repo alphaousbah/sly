@@ -47,5 +47,4 @@ def register_dashapp(app):
 
     with app.app_context():
         dashapp.layout = layout
-
         register_callbacks((dashapp))
