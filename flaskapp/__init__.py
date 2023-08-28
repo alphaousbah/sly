@@ -30,9 +30,9 @@ def register_blueprints(app):
     app.register_blueprint(home)
 
 
-def register_dashapp(app):
+def register_dashapp(flask_app):
     from flaskapp.dashapp.layout import layout
-    from flaskapp.dashapp.callbacks import register_callbacks
+    # from flaskapp.dashapp.callbacks import register_callbacks
 
     # Meta tags for viewport responsiveness
     meta_viewport = {
@@ -40,13 +40,14 @@ def register_dashapp(app):
 
     dashapp = Dash(
         __name__,
-        server=app,
-        url_base_pathname='/dashboard/',
-        assets_folder=get_root_path(__name__) + '/dashboard/assets/',
+        server=flask_app,
+        url_base_pathname='/dashapp/',
+        assets_folder=get_root_path(__name__) + '/dashapp/assets/',
+        use_pages=True,
+        pages_folder='dashapp/pages',
         meta_tags=[meta_viewport],
         external_stylesheets=[dbc.themes.COSMO]
     )
 
-    with app.app_context():
+    with flask_app.app_context():
         dashapp.layout = layout
-    register_callbacks((dashapp))

@@ -3,6 +3,27 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import validates
 
 
+class Analysis(db.Model):
+    __tablename__ = 'analysis'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    client = Column(String(50))
+
+    def __repr__(self):
+        return f'<Analysis {self.name}>'
+
+
+class Layer(db.Model):
+    __tablename__ = 'layer'
+    id = Column(Integer, primary_key=True)
+    analysis_id = Column(Integer, ForeignKey('analysis.id'))
+    deductible = Column(Integer)
+    limit = Column(Integer)
+
+    def __str__(self):
+        return f'{self.limit} XS {self.deductible}'
+
+
 class Restaurant(db.Model):
     __tablename__ = 'restaurant'
     id = Column(Integer, primary_key=True)

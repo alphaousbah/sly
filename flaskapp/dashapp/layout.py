@@ -1,10 +1,22 @@
-from dash import html, dcc
+import dash
+from dash import Dash, html, dcc, callback, Output, Input, State
+import dash_bootstrap_components as dbc
+from flaskapp.dashapp.pages.utils import navbar
 
-from flaskapp.dashapp import df
-
-# https://dash.plotly.com/minimal-app
 layout = html.Div([
-    html.H1('Gapminder data', style={'textAlign': 'center'}),
-    dcc.Dropdown(df.country.unique(), 'Canada', id='dropdown-selection'),
-    dcc.Graph(id='graph-content')
+    dcc.Store(id='app_store', data={}, storage_type='session'),
+    navbar(),
+    dash.page_container,
 ])
+
+
+# Add callback for toggling the navbar collapse on small screens
+@callback(
+    Output("navbar-collapse", "is_open"),
+    [Input("navbar-toggler", "n_clicks")],
+    [State("navbar-collapse", "is_open")],
+)
+def toggle_navbar_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
