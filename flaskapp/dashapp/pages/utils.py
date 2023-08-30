@@ -32,10 +32,10 @@ def navbar():
                         ],
                         nav=True,
                         in_navbar=True,
-                        label='Menu',
-                        className='me-auto',  # The following navitems will be on the right of navbar
+                        label='Dropdown',
+                        className='me-auto',  # The following navitems will be on the right of the navbar
                     ),
-                    dbc.NavLink('Link 4', href='#'),
+                    dbc.NavLink('add@flask.login', href='#'),
                 ],
                     className='w-100',
                 ),
@@ -58,14 +58,14 @@ def header(title=''):
     ])
 
 
-def header_nav(module):
+def header_nav(module, analysis_id):
     directory_name = get_directory(module)['directory']
     page_name = get_directory(module)['page']
 
     if page_name != directory_name:
-        string_title = 'VAV Agro SL 2024 / ' + directory_name.capitalize() + ' / ' + page_name.capitalize()
+        string_title = 'VAV Agro SL 2024 | ' + directory_name.capitalize() + ' | ' + page_name.capitalize()
     else:
-        string_title = 'VAV Agro SL 2024 / ' + directory_name.capitalize()
+        string_title = 'VAV Agro SL 2024 | ' + directory_name.capitalize()
 
     title = html.H5(string_title, className='title')
 
@@ -73,10 +73,11 @@ def header_nav(module):
         dbc.NavLink([
             html.Div(page['name'], className='ms-2'),
         ],
-            href=page['relative_path'], active='exact'
+            href=str(page['relative_path']).replace('none', str(analysis_id)),
+            active='exact'
         )
         for page in dash.page_registry.values()
-        if page_navloc(page['path']) == 'middle'
+        if get_navloc(page['module']) == 'middle'
     ],
         pills=True,
         className='nav_middle',
@@ -86,11 +87,11 @@ def header_nav(module):
         dbc.NavLink([
             html.Div(page['name'], className='ms-2'),
         ],
-            href=page['relative_path'],
+            href=str(page['relative_path']).replace('none', str(analysis_id)),
             active='exact'
         )
         for page in dash.page_registry.values()
-        if page_navloc(page['path']) == 'bottom' and str(page['path']).startswith('/' + directory_name)
+        if get_navloc(page['module']) == 'bottom' and str(page['path']).startswith('/' + directory_name)
     ],
         pills=True,
         className='nav_bottom',
@@ -130,34 +131,28 @@ def get_directory(module):
     return {'directory': directory_name, 'page': page_name}
 
 
-def page_navloc(pathname):
-    # Step 1: Look for the pages that need to be put on the top nav
-    page_name = str(pathname).split('/')[-1]
+def get_navloc(module):
+    page_name = str(module).split('.')[-1]
 
-    if page_name in ['search', 'create']:
-        return 'top'
-    # Step 2: Put hte other pages in middle or bottom nav
-    else:
-        count_slash = str(pathname).count('/')
-        match count_slash:
-            case 1:
-                # The pathname has only one slash : the module is in the pages directory
-                return 'middle'
-            case 2:
-                # The pathname has 2 slashes : the module is in a subdirectory of the pages directory
-                return 'bottom'
+    match page_name:
+        case 'search' | 'create':
+            return 'top'
+        case 'analysis' | 'data' | 'model' | 'results':
+            return 'middle'
+        case _:
+            return 'bottom'
 
 
-def get_id_page(module):
+def get_page_id(module):
     directory_name = get_directory(module)['directory']
     page_name = get_directory(module)['page']
 
     if page_name != directory_name:
-        id_page = directory_name + '-' + page_name + '-'
+        page_id = directory_name + '-' + page_name + '-'
     else:
-        id_page = page_name
+        page_id = page_name
 
-    return id_page
+    return page_id
 
 
 def query_to_list(query):

@@ -1,18 +1,18 @@
 import dash
 from dash import html, dcc, dash_table, callback, Output, Input, State
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.models import Analysis
 from flaskapp.extensions import db
 import pandas as pd
 
-dash.register_page(__name__, nav_loc='top')
+dash.register_page(__name__)
 
-id_page = get_id_page(__name__)
+page_id = get_page_id(__name__)
 
 
 def layout():
-    print(id_page)
     return html.Div([
         dbc.Row([
             dbc.Col([
@@ -20,21 +20,27 @@ def layout():
                     dbc.CardHeader('Analysis Settings'),
                     dbc.CardBody([
                         dbc.Row([
-                            dbc.Label('Analysis Name', html_for=id_page + 'input-form', width=2),
+                            dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
                             dbc.Col([
-                                dbc.Input(id=id_page + 'input-name', placeholder='Enter a value'),
+                                dbc.Input(id=page_id + 'input-quote', placeholder='Enter a value'),
                             ]),
                         ], className='mb-2'),
                         dbc.Row([
-                            dbc.Label('Client', html_for=id_page + 'input-client', width=2),
+                            dbc.Label('Analysis Name', html_for=page_id + 'input-name', width=2),
                             dbc.Col([
-                                dbc.Input(id=id_page + 'input-client', placeholder='Enter a value'),
+                                dbc.Input(id=page_id + 'input-name', placeholder='Enter a value'),
+                            ]),
+                        ], className='mb-2'),
+                        dbc.Row([
+                            dbc.Label('Client', html_for=page_id + 'input-client', width=2),
+                            dbc.Col([
+                                dbc.Input(id=page_id + 'input-client', placeholder='Enter a value'),
                             ]),
                         ], className='mb-2'),
                         dbc.Row([
                             dbc.Col([
-                                dbc.Button('Click', id=id_page + 'btn-create', n_clicks=0, className='button'),
-                                html.Div(id=id_page + 'div-output'),
+                                dbc.Button('Click', id=page_id + 'btn-create', n_clicks=0, className='button'),
+                                html.Div(id=page_id + 'div-output'),
                             ]),
                         ]),
                     ]),
@@ -45,16 +51,17 @@ def layout():
 
 
 @callback(
-    Output(id_page + 'div-output', 'children'),
-    Input(id_page + 'btn-create', 'n_clicks'),
-    [
-        State(id_page + 'input-name', 'value'),
-        State(id_page + 'input-client', 'value'),
-    ],
+    Output(page_id + 'div-output', 'children'),
+    Input(page_id + 'btn-create', 'n_clicks'),
+    State(page_id + 'input-quote', 'value'),
+    State(page_id + 'input-name', 'value'),
+    State(page_id + 'input-client', 'value'),
 )
-def update_div(n_clicks, name, client):
-    if n_clicks > 0:
-        new_analysis = Analysis(name=name, client=client)
-        db.session.add(new_analysis)
-        db.session.commit()
-        return f'The analysis {name} for {client} has been created'
+def update_div(n_clicks, quote, name, client):
+    if n_clicks is None:
+        raise PreventUpdate
+
+    new_analysis = Analysis(quote=quote, name=name, client=client)
+    db.session.add(new_analysis)
+    db.session.commit()
+    return f'The analysis {name} for {client} has been created'

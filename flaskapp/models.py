@@ -6,6 +6,7 @@ from sqlalchemy.orm import validates
 class Analysis(db.Model):
     __tablename__ = 'analysis'
     id = Column(Integer, primary_key=True)
+    quote = Column(Integer)
     name = Column(String(50))
     client = Column(String(50))
 
