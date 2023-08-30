@@ -7,7 +7,7 @@ from flaskapp.extensions import db
 from flaskapp.models import Analysis
 import pandas as pd
 
-dash.register_page(__name__)
+dash.register_page(__name__, path='/')
 
 page_id = get_page_id(__name__)
 
