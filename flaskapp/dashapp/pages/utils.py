@@ -22,17 +22,6 @@ from sqlalchemy import inspect
 
 
 def get_nav_top():
-    """
-    Generate the top navigation bar for the application.
-
-    This function creates a Bootstrap Navbar component containing a logo, brand name, navigation links, and a dropdown menu.
-
-    Returns:
-        dash_bootstrap_components.Navbar: The top navigation bar component.
-
-    Example Usage:
-        top_navbar = get_nav_top()
-    """
     return dbc.Navbar(
         dbc.Container([
             html.A(
