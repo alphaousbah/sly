@@ -1,7 +1,6 @@
 import dash
 from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
-import dash_mantine_components as dmc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.models import Analysis
 from flaskapp.extensions import db

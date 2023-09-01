@@ -1,6 +1,5 @@
 import dash
 from dash import html, dcc, dash_table, callback, Output, Input, State
-from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.models import Analysis

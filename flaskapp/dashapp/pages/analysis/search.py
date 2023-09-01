@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, dash_table, callback, clientside_callback, Output, Input, State
+from dash import html, dcc, dash_table, callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
@@ -9,6 +9,7 @@ import pandas as pd
 
 dash.register_page(__name__, path='/')
 page_id = get_page_id(__name__)
+
 
 def layout():
     analyses = query_to_list(Analysis.query.all())
@@ -89,8 +90,8 @@ def delete_analysis(n_clicks, selected_row_ids):
     if n_clicks is None or selected_row_ids is None:
         raise PreventUpdate
 
-    for id in selected_row_ids:
-        analysis_to_del = Analysis.query.get_or_404(id)
+    for analysis_id in selected_row_ids:
+        analysis_to_del = Analysis.query.get_or_404(analysis_id)
         db.session.delete(analysis_to_del)
         db.session.commit()
 

@@ -15,10 +15,10 @@ Functions:
 Note: This code is intended for use in a Dash web application and relies on specific module and page naming conventions.
 """
 
+# TODO: Update the doctring
 import dash
-from dash import html, dcc
+from dash import html
 import dash_bootstrap_components as dbc
-from sqlalchemy import inspect
 
 
 def get_nav_top():

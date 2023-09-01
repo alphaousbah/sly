@@ -1,5 +1,5 @@
 import dash
-from dash import Dash, html, dcc, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import get_nav_top
 

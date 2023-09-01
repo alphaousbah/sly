@@ -4,10 +4,12 @@ This module defines the database models for a Flask application. It includes the
 - Analysis: Represents the analysis with attributes id, quote, name, and client.
 - Layer: Represents reinsurance layers with attributes id, analysis_id, deductible, and limit.
 
-These models are designed to work with SQLAlchemy and are used to interact with the underlying database. Each model corresponds to a database table with its respective fields.
+These models are designed to work with SQLAlchemy and are used to interact with the underlying database.
+Each model corresponds to a database table with its respective fields.
 """
 
 # Cascading delete : https://www.geeksforgeeks.org/sqlalchemy-cascading-deletes/
+
 from flaskapp.extensions import db
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Float, String
 from sqlalchemy.orm import validates, relationship
