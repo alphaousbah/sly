@@ -1,15 +1,43 @@
+"""
+This module defines functions for generating components commonly used in a Dash web application,
+such as navigation bars, page titles, and navigation menus.
+
+Functions:
+- `get_nav_top`: Generates the top navigation bar with links and a logo.
+- `get_title`: Generates the page title based on the module and analysis name.
+- `get_nav_middle`: Generates a navigation menu for the middle section of the page.
+- `get_nav_bottom`: Generates a navigation menu for the bottom section of the page.
+- `get_directory`: Extracts the directory and page names from a module string.
+- `get_navloc`: Determines the navigation location based on the page name.
+- `get_page_id`: Generates a unique page ID based on the directory and page names.
+- `query_to_list`: Converts a SQLAlchemy query result to a list of dictionaries.
+
+Note: This code is intended for use in a Dash web application and relies on specific module and page naming conventions.
+"""
+
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from sqlalchemy import inspect
 
 
-def navbar():
+def get_nav_top():
+    """
+    Generate the top navigation bar for the application.
+
+    This function creates a Bootstrap Navbar component containing a logo, brand name, navigation links, and a dropdown menu.
+
+    Returns:
+        dash_bootstrap_components.Navbar: The top navigation bar component.
+
+    Example Usage:
+        top_navbar = get_nav_top()
+    """
     return dbc.Navbar(
         dbc.Container([
             html.A(
                 dbc.Row([
-                    dbc.Col(html.Img(src='/dashapp/assets/sly-logo.png', height="30px")),
+                    dbc.Col(html.Img(src='/dashapp/assets/logo-ccrre.png', height="30px")),
                     dbc.Col(dbc.NavbarBrand('SLy', className="ms-2")),
                 ],
                     align='center',
@@ -21,8 +49,8 @@ def navbar():
             dbc.NavbarToggler(id='navbar-toggler', n_clicks=0),
             dbc.Collapse(
                 dbc.Nav([
-                    dbc.NavLink('Search', href='/dashapp/search'),
-                    dbc.NavLink('Create', href='/dashapp/create'),
+                    dbc.NavLink('Search', href='/dashapp/'),
+                    dbc.NavLink('Create Analysis', href='/dashapp/analysis/create'),
                     dbc.DropdownMenu(
                         [
                             dbc.DropdownMenuItem('Entry 1'),
@@ -52,41 +80,47 @@ def navbar():
     )
 
 
-def header(title=''):
-    return html.Div([
-        html.H5(title, className='title'),
-    ])
-
-
-def header_nav(module, analysis_id):
+def get_title(module, analysis_name=None):
     directory_name = get_directory(module)['directory']
     page_name = get_directory(module)['page']
 
     if page_name != directory_name:
-        string_title = 'VAV Agro SL 2024 | ' + directory_name.capitalize() + ' | ' + page_name.capitalize()
+        string_title = analysis_name + ' | ' + directory_name.capitalize() + ' | ' + page_name.capitalize()
     else:
-        string_title = 'VAV Agro SL 2024 | ' + directory_name.capitalize()
+        string_title = analysis_name + ' | ' + directory_name.capitalize()
 
-    title = html.H5(string_title, className='title')
+    title = html.Div(
+        html.H5(string_title, className='title')
+    )
+
+    return title
+
+
+def get_nav_middle(module, analysis_id):
+    directory_name = get_directory(module)['directory']
 
     nav_middle = dbc.Nav([
-        dbc.NavLink([
-            html.Div(page['name'], className='ms-2'),
-        ],
-            href=str(page['relative_path']).replace('none', str(analysis_id)),
-            active='exact'
+        dbc.NavLink(
+            str(chapter).capitalize(),
+            href=f'/dashapp/{chapter}/view/{analysis_id}',
+            active=(chapter == directory_name),
         )
-        for page in dash.page_registry.values()
-        if get_navloc(page['module']) == 'middle'
+        for chapter in ['analysis', 'data', 'model', 'results']
     ],
         pills=True,
         className='nav_middle',
     )
 
+    return nav_middle
+
+
+def get_nav_bottom(module, analysis_id):
+    print(f'analysis id: {analysis_id}')
+    directory_name = get_directory(module)['directory']
+
     nav_bottom = dbc.Nav([
-        dbc.NavLink([
-            html.Div(page['name'], className='ms-2'),
-        ],
+        dbc.NavLink(
+            page['name'],
             href=str(page['relative_path']).replace('none', str(analysis_id)),
             active='exact'
         )
@@ -97,11 +131,7 @@ def header_nav(module, analysis_id):
         className='nav_bottom',
     )
 
-    return html.Div([
-        title,
-        nav_middle,
-        nav_bottom,
-    ])
+    return html.Div(nav_bottom)
 
 
 def get_directory(module):
@@ -123,8 +153,8 @@ def get_directory(module):
     #
     # print(page1)  # data = the page name we want
     # print(page2)  # premiums = the page name we want
-    index_pages = str(module).index('pages')
-    substring = str(module)[index_pages:].split('.')
+    index_string_pages = str(module).index('pages')
+    substring = str(module)[index_string_pages:].split('.')
     directory_name = substring[1]
     page_name = substring[-1]
 

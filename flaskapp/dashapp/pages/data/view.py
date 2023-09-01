@@ -5,16 +5,11 @@ from flaskapp.dashapp.pages.utils import *
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
-dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
-page_id = get_page_id(__name__)
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=1)
 
 
 def layout(analysis_id=None):
     analysis_name = 'VAV Agro SL 2024'
-
-    datatable = html.Div([
-
-    ])
 
     return html.Div([
         get_title(__name__, analysis_name),
@@ -24,14 +19,8 @@ def layout(analysis_id=None):
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    dbc.Button('Load', id=page_id + 'btn-load', className='button'),
+                    html.Img(src='/dashapp/assets/under-construction.png')
                 ])
-            ]),
-            dbc.Row([
-                dbc.Col([
-
-                ])
-            ]),
+            ])
         ], className='div-standard')
     ])
-    #

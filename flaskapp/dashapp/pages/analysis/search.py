@@ -8,17 +8,15 @@ from flaskapp.models import Analysis
 import pandas as pd
 
 dash.register_page(__name__, path='/')
-
 page_id = get_page_id(__name__)
-
 
 def layout():
     analyses = query_to_list(Analysis.query.all())
 
-    # Create links to analysis
+    # Create links to open an analysis from the datatable
     for analysis in analyses:
         for col in ['quote', 'name']:
-            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/' + str(analysis['id']) + ')'
+            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/view/' + str(analysis['id']) + ')'
 
     df = pd.DataFrame(analyses)
 
@@ -61,12 +59,12 @@ def layout():
     )
 
     return html.Div([
-        header('Analysis Search'),
+        html.H5('Analysis Search', className='title'),
         html.Div([
             dbc.Row([
                 dbc.Col([
                     dcc.Link(dbc.Button('Create', id=page_id + 'btn-create', className='button'),
-                             href='/dashapp/create'),
+                             href='/dashapp/analysis/create'),
                     dbc.Button('Copy', id=page_id + 'btn-copy', className='button'),
                     dbc.Button('Delete', id=page_id + 'btn-delete', className='button'),
                 ]),
@@ -101,7 +99,7 @@ def delete_analysis(n_clicks, selected_row_ids):
     # Create links to analysis
     for analysis in analyses:
         for col in ['quote', 'name']:
-            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/' + str(analysis['id']) + ')'
+            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/view/' + str(analysis['id']) + ')'
 
     df = pd.DataFrame(analyses)
     data = df.to_dict('records')

@@ -3,17 +3,23 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 
-dash.register_page(__name__, path_template='/data/layers/<analysis_id>')
+directory = get_directory(__name__)['directory']
+page = get_directory(__name__)['page']
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
 
 
 def layout(analysis_id=None):
-    analysis_id = str(analysis_id).split('/')[-1]
+    analysis_name = 'VAV Agro SL 2024'
+
     return html.Div([
-        header_nav(__name__, analysis_id),
+        get_title(__name__, analysis_name),
+        get_nav_middle(__name__, analysis_id),
+        get_nav_bottom(__name__, analysis_id),
+
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    'Content'
+                    'Content Layers'
                 ])
             ])
         ], className='div-standard')
