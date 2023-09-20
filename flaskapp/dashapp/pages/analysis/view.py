@@ -12,7 +12,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = Analysis.query.get_or_404(analysis_id)
+    analysis = db.session.query(Analysis).get(analysis_id)
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
@@ -22,46 +22,43 @@ def layout(analysis_id):
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Card([
-                                dbc.CardHeader('Analysis Settings'),
-                                dbc.CardBody([
-                                    dbc.Row([
-                                        dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
-                                        dbc.Col([
-                                            dbc.Input(id=page_id + 'input-quote', value=analysis.quote),
-                                        ]),
-                                    ], className='mb-2'),
-                                    dbc.Row([
-                                        dbc.Label('Analysis Name', html_for=page_id + 'input-name', width=2),
-                                        dbc.Col([
-                                            dbc.Input(id=page_id + 'input-name', value=analysis.name),
-                                        ]),
-                                    ], className='mb-2'),
-                                    dbc.Row([
-                                        dbc.Label('Client', html_for=page_id + 'input-client', width=2),
-                                        dbc.Col([
-                                            dbc.Input(id=page_id + 'input-client', value=analysis.client),
-                                        ]),
-                                    ], className='mb-2'),
-                                    dbc.Row([
-                                        dbc.Col([
-                                            dbc.Button('Update', id=page_id + 'btn-update', className='button'),
-                                            dbc.Alert(
-                                                "The analysis has been updated",
-                                                id=page_id + 'alert-update',
-                                                is_open=False,
-                                                duration=2000,
-                                            ),
-                                        ]),
-                                    ]),
+                    dbc.Card([
+                        dbc.CardHeader('Analysis Settings'),
+                        dbc.CardBody([
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
+                                    dbc.Input(id=page_id + 'input-quote', value=analysis.quote),
                                 ]),
-                            ], className='card'),
-                        ], width=10),
-                    ]),
-                ])
-            ])
+                            ], className='mb-2'),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label('Analysis Name', html_for=page_id + 'input-name', width=2),
+                                    dbc.Input(id=page_id + 'input-name', value=analysis.name),
+                                ]),
+                            ], className='mb-2'),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Label('Client', html_for=page_id + 'input-client', width=2),
+                                    dbc.Input(id=page_id + 'input-client', value=analysis.client),
+                                ]),
+                            ], className='mb-2'),
+                            dbc.Row([
+                                dbc.Col([
+                                    dbc.Button('Update', id=page_id + 'btn-update', className='button'),
+                                    dbc.Alert(
+                                        "The analysis has been updated",
+                                        id=page_id + 'alert-update',
+                                        is_open=False,
+                                        duration=2000,
+                                    ),
+                                ]),
+                            ]),
+                        ]),
+                    ], className='card'),
+                ], width=10),
+            ]),
+
         ], className='div-standard')
     ])
 
@@ -79,7 +76,7 @@ def layout(analysis_id):
 def update_analysis(n_clicks, pathname, quote, name, client, is_open):
     analysis_id = str(pathname).split('/')[-1]
 
-    analysis = Analysis.query.get_or_404(analysis_id)
+    analysis = db.session.query(Analysis).get(analysis_id)
     analysis.quote = quote
     analysis.name = name
     analysis.client = client

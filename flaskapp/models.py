@@ -21,6 +21,9 @@ class Analysis(db.Model):
     quote = Column(Integer)
     name = Column(String(50))
     client = Column(String(50))
+    layers = relationship('Layer', backref='analysis', cascade='all, delete')
+    histolossfiles = relationship('HistoLossFile', backref='analysis', cascade='all, delete')
+    modeledlossfiles = relationship('ModeledLossFile', backref='analysis', cascade='all, delete')
 
     def __repr__(self):
         return f'<Analysis {self.name}>'
@@ -29,7 +32,8 @@ class Analysis(db.Model):
 class Layer(db.Model):
     __tablename__ = 'layer'
     id = Column(Integer, primary_key=True)
-    analysis_id = Column(Integer, ForeignKey('analysis.id', ondelete='CASCADE'))
+    analysis_id = Column(Integer, ForeignKey('analysis.id'))
+    premium = Column(Integer)
     deductible = Column(Integer)
     limit = Column(Integer)
 
@@ -37,28 +41,51 @@ class Layer(db.Model):
         return f'{self.limit} XS {self.deductible}'
 
 
-class LossFile(db.Model):
-    __tablename__ = 'lossfile'
+class HistoLossFile(db.Model):
+    __tablename__ = 'histolossfile'
     id = Column(Integer, primary_key=True)
+    analysis_id = Column(Integer, ForeignKey('analysis.id'))
+    vintage = Column(Integer)
     name = Column(String(50), nullable=False)
-    losses = relationship('Loss', backref='lossfile', cascade='all, delete')
+    losses = relationship('HistoLoss', backref='file', cascade='all, delete')
 
     def __repr__(self):
-        return f'<LossFile {self.name}>'
+        return f'<HistoLossFile {self.name}>'
 
 
-class Loss(db.Model):
-    __tablename__ = 'loss'
+class HistoLoss(db.Model):
+    __tablename__ = 'histoloss'
     id = Column(Integer, primary_key=True)
-    lossfile_id = Column(Integer, ForeignKey('lossfile.id'))
-    name = Column(String(50))
+    lossfile_id = Column(Integer, ForeignKey('histolossfile.id'))
     year = Column(Integer)
     premium = Column(Integer)
     loss = Column(Integer)
     loss_ratio = Column(Float)
 
     def __repr__(self):
-        return f'<Loss {self.name}'
+        return f'<HistoLoss {self.year}: {self.premium}, {self.loss}, {self.loss_ratio}'
+
+
+class ModeledLossFile(db.Model):
+    __tablename__ = 'modeledlossfile'
+    id = Column(Integer, primary_key=True)
+    analysis_id = Column(Integer, ForeignKey('analysis.id'))
+    name = Column(String(50), nullable=False)
+    losses = relationship('ModeledLoss', backref='file', cascade='all, delete')
+
+    def __repr__(self):
+        return f'<ModeledLossFile {self.name}>'
+
+
+class ModeledLoss(db.Model):
+    __tablename__ = 'modeledloss'
+    id = Column(Integer, primary_key=True)
+    lossfile_id = Column(Integer, ForeignKey('modeledlossfile.id'))
+    year = Column(Integer)
+    amount = Column(Integer)
+
+    def __repr__(self):
+        return f'<ModeledLoss {self.year}: {self.amount} '
 
 
 class Restaurant(db.Model):

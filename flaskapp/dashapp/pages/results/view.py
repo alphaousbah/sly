@@ -10,7 +10,7 @@ page = get_directory(__name__)['page']
 dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
 
 
-def layout(analysis_id=None):
+def layout(analysis_id):
     analysis_name = 'VAV Agro SL 2024'
 
     return html.Div([

@@ -12,53 +12,6 @@ page_id = get_page_id(__name__)
 
 
 def layout():
-    analyses = query_to_list(Analysis.query.all())
-
-    # Create links to open an analysis from the datatable
-    for analysis in analyses:
-        for col in ['quote', 'name']:
-            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/view/' + str(analysis['id']) + ')'
-
-    df = pd.DataFrame(analyses)
-
-    datatable = dash_table.DataTable(
-        id=page_id + 'datatable',
-        data=df.to_dict('records'),
-        columns=[{'id': col, 'name': str(col).capitalize(), 'presentation': 'markdown'} for col in df.columns],
-        hidden_columns=['id'],
-        sort_by=[{'column_id': 'id', 'direction': 'asc'}],
-        editable=False,
-        filter_action='native',
-        sort_action='native',
-        sort_mode='multi',
-        row_selectable='multi',
-        selected_rows=[],
-        page_action='native',
-        page_current=0,
-        page_size=10,
-        css=[
-            {'selector': 'p', 'rule': 'margin: 0'},
-            {'selector': '.show-hide', 'rule': 'display: none'}
-        ],
-        style_header={
-            'backgroundColor': 'whitesmoke',
-            'padding': '0.5rem'
-        },
-        style_cell={
-            'fontFamily': '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,'
-                          '"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol",'
-                          '"Noto Color Emoji"',
-            'fontSize': '13px',
-            'lineHeight': '1.5',
-            'textAlign': 'left',
-            'padding': '0.5rem',
-            'border': '1px solid #dee2e6',
-        },
-        style_data_conditional=[
-            # {'if': {'column_id': 'id'}, 'width': '10%'},
-        ]
-    )
-
     return html.Div([
         html.H5('Analysis Search', className='title'),
         html.Div([
@@ -72,37 +25,33 @@ def layout():
             ]),
             dbc.Row([
                 dbc.Col([
-                    datatable,
+                    html.Div(
+                        get_table_analyses(page_id + 'table_analyses', Analysis.query.all()),
+                        id=page_id + 'div-table-analyses'
+                    ),
                 ]),
             ]),
         ], className='div-standard'),
     ]),
 
 
-# Add a modal to ask the user to confirm the deletion
+# TODO: Add a modal to ask the user to confirm the deletion
 @callback(
-    Output(page_id + 'datatable', 'data'),
-    Output(page_id + 'datatable', 'selected_rows'),
+    Output(page_id + 'div-table-analyses', 'children'),
     Input(page_id + 'btn-delete', 'n_clicks'),
-    State(page_id + 'datatable', 'selected_row_ids'),
+    State(page_id + 'table-analyses', 'selected_row_ids'),
 )
-def delete_analysis(n_clicks, selected_row_ids):
+def delete_analyses(n_clicks, selected_row_ids):
     if n_clicks is None or selected_row_ids is None:
         raise PreventUpdate
 
+    # Deleted selected analyses
     for analysis_id in selected_row_ids:
-        analysis_to_del = Analysis.query.get_or_404(analysis_id)
-        db.session.delete(analysis_to_del)
+        analysis = db.session.query(Analysis).get(analysis_id)
+        db.session.delete(analysis)
         db.session.commit()
 
-    analyses = query_to_list(Analysis.query.all())
+    # Update the analyses table
+    table_analyses = get_table_analyses(page_id + 'table-analyses', Analysis.query.all())
 
-    # Create links to analysis
-    for analysis in analyses:
-        for col in ['quote', 'name']:
-            analysis[col] = '[' + analysis[col] + '](/dashapp/analysis/view/' + str(analysis['id']) + ')'
-
-    df = pd.DataFrame(analyses)
-    data = df.to_dict('records')
-
-    return data, []
+    return table_analyses

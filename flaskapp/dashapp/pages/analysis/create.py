@@ -19,20 +19,20 @@ def layout():
                         dbc.CardHeader('Analysis Settings'),
                         dbc.CardBody([
                             dbc.Row([
-                                dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
                                 dbc.Col([
+                                    dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
                                     dbc.Input(id=page_id + 'input-quote', placeholder='Enter a value'),
                                 ]),
                             ], className='mb-2'),
                             dbc.Row([
-                                dbc.Label('Analysis Name', html_for=page_id + 'input-name', width=2),
                                 dbc.Col([
+                                    dbc.Label('Analysis Name', html_for=page_id + 'input-name', width=2),
                                     dbc.Input(id=page_id + 'input-name', placeholder='Enter a value'),
                                 ]),
                             ], className='mb-2'),
                             dbc.Row([
-                                dbc.Label('Client', html_for=page_id + 'input-client', width=2),
                                 dbc.Col([
+                                    dbc.Label('Client', html_for=page_id + 'input-client', width=2),
                                     dbc.Input(id=page_id + 'input-client', placeholder='Enter a value'),
                                 ]),
                             ], className='mb-2'),

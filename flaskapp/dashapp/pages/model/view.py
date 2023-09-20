@@ -7,10 +7,10 @@ from flaskapp.dashapp.pages.utils import *
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
-dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=1)
 
 
-def layout(analysis_id=None):
+def layout(analysis_id):
     analysis_name = 'VAV Agro SL 2024'
 
     return html.Div([
