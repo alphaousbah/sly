@@ -87,46 +87,99 @@ def display_model_parameters(data):
             marks={year: f'{year}' for year in range(year_min, year_max + 1)},
             className='mb-3',
         ),
-        html.Div(id=page_id + 'div-model-statistics'),
+        html.Div(id=page_id + 'div-model'),
     ]),
 
 
 @callback(
-    Output(page_id + 'div-model-statistics', 'children'),
+    Output(page_id + 'div-model', 'children'),
     Input(page_id + 'slider-modeling-period', 'value'),
     State(page_id + 'table-losses', 'data'),
 )
-def display_model_statistics(slider_value, data):
+def display_model(slider_value, data):
     df = pd.DataFrame(data).astype(float)
     df['year'] = df['year'].astype(int)
 
     year_min = slider_value[0]
     year_max = slider_value[1]
 
-    sample_loss_ratio = df['loss_ratio'][(df['year'] >= year_min) & (df['year'] <= year_max)]
+    sample = df['loss_ratio'][(df['year'] >= year_min) & (df['year'] <= year_max)]
 
-    mean_loss_ratio = np.mean(sample_loss_ratio)
-    std_loss_ratio = np.std(sample_loss_ratio)
+    # TODO: Create a function that tkaes a sample and return an evaluation of all parameters
+    mean = np.mean(sample)
+    std = np.std(sample)
 
-    mu = np.log(mean_loss_ratio / np.sqrt(1 + std_loss_ratio ** 2 / mean_loss_ratio ** 2))
+    mu = np.log(mean / np.sqrt(1 + std ** 2 / mean ** 2))
     scale = np.exp(mu)
-    s = np.sqrt(np.log((1 + std_loss_ratio ** 2 / mean_loss_ratio ** 2)))
+    s = np.sqrt(np.log((1 + std ** 2 / mean ** 2)))
 
-    simulation = lognorm.rvs(s=s, scale=scale, size=10000)
-    print(sample_loss_ratio)
+    fit_lognorm = lognorm(s=s, scale=scale)
 
-    fig = None
+    x = np.linspace(fit_lognorm.ppf(0.01), fit_lognorm.ppf(0.99), 10000)
+
+    df_model = pd.DataFrame(
+        {
+            'x': x.tolist(),
+            'y': fit_lognorm.pdf(x).tolist()
+        }
+    )
+
+    df_sample = pd.DataFrame(sample)
+
+    fig = px.histogram(
+        df_sample, x='loss_ratio',
+        histnorm='probability density',
+        nbins=10,
+        range_x=[x[0], x[-1]],
+    )
+
+    fig.add_trace(px.line(df_model, x='x', y='y', color_discrete_sequence=['red']).data[0])
 
     return html.Div([
         dbc.Label('Distribution statitics'),
-        html.Div(f'mean: {mean_loss_ratio}'),
-        html.Div(f'standard deviation: {std_loss_ratio}', className='mb-3'),
-        dcc.Graph(id=page_id + 'graph-distribution', figure=fig),
+        html.Div(f'mean: {mean:.3f}'),
+        html.Div(f'standard deviation: {std:.3f}', className='mb-3'),
+        dcc.Graph(id=page_id + 'graph-distribution', figure=fig, className='mb-3'),
         dbc.Button(
-            'Create a lognormal model',
+            'Create the gross YLT',
             id=page_id + 'btn-create-model',
             outline=True,
             color='primary',
-            className='button',
-        )
+            className='button mb-3',
+        ),
+        html.Div(id=page_id + 'div-gross-ylt'),
     ]),
+
+
+@callback(
+    Output(page_id + 'div-gross-ylt', 'children'),
+    Input(page_id + 'btn-create-model', 'n_clicks'),
+    config_prevent_initial_callbacks=True
+)
+def create_gross_ylt(n_clicks):
+    mean = 0.569
+    std = 0.201
+
+    mu = np.log(mean / np.sqrt(1 + std ** 2 / mean ** 2))
+    scale = np.exp(mu)
+    s = np.sqrt(np.log((1 + std ** 2 / mean ** 2)))
+
+    fit_lognorm = lognorm(s=s, scale=scale)
+
+    years = range(1, 1001)
+    loss_ratios = fit_lognorm.rvs(size=1000).tolist()
+    amounts = [int(loss_ratio * 1000000) for loss_ratio in loss_ratios]
+
+    df = pd.DataFrame(
+        {
+            'year': years,
+            'amount': amounts
+        }
+    )
+
+    return dash_table.DataTable(
+        data=df.to_dict('records'),
+        css=get_datatable_css(),
+        style_header=get_datatable_style_header(),
+        style_cell=get_datatable_style_cell(),
+    )

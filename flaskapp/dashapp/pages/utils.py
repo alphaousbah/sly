@@ -281,7 +281,7 @@ def get_table_losses(component_id, query):
             id=component_id,
             data=df.to_dict('records'),
             columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'loss_set_id'],
+            hidden_columns=['id', 'lossfile_id'],
             sort_by=[{'column_id': 'year', 'direction': 'asc'}],
             editable=False,
             filter_action='none',
