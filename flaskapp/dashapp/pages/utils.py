@@ -7,7 +7,7 @@ Functions:
 - `get_title`: Generates the page title based on the module and analysis name.
 - `get_nav_middle`: Generates a navigation menu for the middle section of the page.
 - `get_nav_bottom`: Generates a navigation menu for the bottom section of the page.
-- `get_directory`: Extracts the directory and page names from a module string.
+- `get_directory`: Extracts the directory and page names from a modulestring.
 - `get_navloc`: Determines the navigation location based on the page name.
 - `get_page_id`: Generates a unique page ID based on the directory and page names.
 - `query_to_list`: Converts a SQLAlchemy query result to a list of dictionaries.
@@ -91,16 +91,30 @@ def get_nav_middle(module, analysis_id):
     nav_middle = dbc.Nav([
         dbc.NavLink(
             str(chapter).capitalize(),
-            href=f'/dashapp/{chapter}/view/{analysis_id}',
+            href=f'/dashapp/{chapter}/{get_chapter_target(chapter)}/{analysis_id}',
             active=(chapter == directory_name),
         )
-        for chapter in ['analysis', 'data', 'model', 'results']
+        for chapter in ['analysis', 'data', 'models', 'relationships', 'results']
     ],
         pills=True,
         className='nav_middle',
     )
 
     return nav_middle
+
+
+def get_chapter_target(chapter):
+    match chapter:
+        case 'analysis':
+            return 'view'
+        case 'data':
+            return 'layers'
+        case 'relationships':
+            return 'define'
+        case 'models':
+            return 'experience'
+        case 'results':
+            return 'view'
 
 
 def get_nav_bottom(module, analysis_id):
@@ -155,7 +169,7 @@ def get_navloc(module):
     match page_name:
         case 'search' | 'create':
             return 'top'
-        case 'analysis' | 'data' | 'model' | 'results':
+        case 'analysis' | 'data' | 'models' | 'results':
             return 'middle'
         case _:
             return 'bottom'
@@ -291,7 +305,7 @@ def get_table_losses(component_id, query):
             selected_rows=[],
             page_action='native',
             page_current=0,
-            page_size=10,
+            page_size=20,
             css=get_datatable_css(),
             style_header=get_datatable_style_header(),
             style_cell=get_datatable_style_cell(),

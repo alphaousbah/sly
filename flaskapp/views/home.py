@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from flaskapp.extensions import db
-from flaskapp.models import Restaurant
+from flaskapp.models import *
 
 home = Blueprint('home', __name__)
 

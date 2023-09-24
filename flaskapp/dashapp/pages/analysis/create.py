@@ -2,7 +2,7 @@ import dash
 from dash import html, dcc, dash_table, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
-from flaskapp.models import Analysis
+from flaskapp.models import *
 from flaskapp.extensions import db
 
 dash.register_page(__name__)

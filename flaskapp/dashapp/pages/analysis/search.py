@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
-from flaskapp.models import Analysis
+from flaskapp.models import *
 import pandas as pd
 
 dash.register_page(__name__, path='/')

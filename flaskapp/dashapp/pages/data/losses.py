@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
-from flaskapp.models import Analysis, HistoLossFile, HistoLoss
+from flaskapp.models import *
 import pandas as pd
 from io import StringIO
 
@@ -45,7 +45,7 @@ def layout(analysis_id):
                         dbc.Button('Load', id=page_id + 'btn-load', className='mb-2 button'),
                         dbc.Alert(
                             'The loss file has been loaded',
-                            id=page_id + 'alert-update',
+                            id=page_id + 'alert-save',
                             is_open=False,
                             duration=2000,
                         ),
@@ -61,6 +61,7 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
+        dcc.Store(id=page_id + 'store'),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -100,7 +101,7 @@ def toggle_modal(n_clicks, is_open):
 
 
 @callback(
-    Output(page_id + 'alert-update', 'is_open'),
+    Output(page_id + 'alert-save', 'is_open'),
     Output(page_id + 'div-table-lossfiles', 'children', allow_duplicate=True),
     Input(page_id + 'btn-load', 'n_clicks'),
     State(page_id + 'location', 'pathname'),
@@ -111,7 +112,7 @@ def toggle_modal(n_clicks, is_open):
     config_prevent_initial_callbacks=True
 )
 def create_lossfile(n_clicks, pathname, data, vintage, name, is_open):
-    # Add the new loss file to the database
+    # Save the new loss file in the database
     analysis_id = str(pathname).split('/')[-1]  # https://dash.plotly.com/dash-core-components/location
     analysis = db.session.query(Analysis).get(analysis_id)
     lossfile = HistoLossFile(

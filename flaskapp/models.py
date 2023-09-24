@@ -11,31 +11,46 @@ Each model corresponds to a database table with its respective fields.
 # Cascading delete : https://www.geeksforgeeks.org/sqlalchemy-cascading-deletes/
 
 from flaskapp.extensions import db
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Float, String
-from sqlalchemy.orm import validates, relationship
 
 
 class Analysis(db.Model):
     __tablename__ = 'analysis'
-    id = Column(Integer, primary_key=True)
-    quote = Column(Integer)
-    name = Column(String(50))
-    client = Column(String(50))
-    layers = relationship('Layer', backref='analysis', cascade='all, delete')
-    histolossfiles = relationship('HistoLossFile', backref='analysis', cascade='all, delete')
-    modeledlossfiles = relationship('ModeledLossFile', backref='analysis', cascade='all, delete')
+    id = db.Column(db.Integer, primary_key=True)
+    quote = db.Column(db.Integer)
+    name = db.Column(db.String(50))
+    client = db.Column(db.String(50))
+    layers = db.relationship('Layer', backref='analysis', cascade='all, delete')
+    histolossfiles = db.relationship('HistoLossFile', backref='analysis', cascade='all, delete')
+    modeledlossfiles = db.relationship('ModeledLossFile', backref='analysis', cascade='all, delete')
+    yearlosstables = db.relationship('YearLossTable', backref='analysis', cascade='all, delete')
 
     def __repr__(self):
         return f'<Analysis {self.name}>'
 
 
+# Create a many-to-many db.relationship between layers and year loss tables
+# The helper table must be created before the 2 linked objects
+# https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/#many-to-many-db.relationships
+yearlosstables = db.Table(
+    'yearlosstables',
+    db.Column('yearlosstable_id', db.Integer, db.ForeignKey('yearlosstable.id'), primary_key=True),
+    db.Column('layer_id', db.Integer, db.ForeignKey('layer.id'), primary_key=True),
+)
+
+
 class Layer(db.Model):
     __tablename__ = 'layer'
-    id = Column(Integer, primary_key=True)
-    analysis_id = Column(Integer, ForeignKey('analysis.id'))
-    premium = Column(Integer)
-    deductible = Column(Integer)
-    limit = Column(Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_id = db.Column(db.Integer, db.ForeignKey('analysis.id'))
+    premium = db.Column(db.Integer)
+    deductible = db.Column(db.Integer)
+    limit = db.Column(db.Integer)
+    yearlosstables = db.relationship(
+        'YearLossTable',
+        secondary=yearlosstables,
+        lazy='subquery',
+        backref=db.backref('layers', lazy=True)
+    )
 
     def __repr__(self):
         return f'{self.limit} XS {self.deductible}'
@@ -43,11 +58,11 @@ class Layer(db.Model):
 
 class HistoLossFile(db.Model):
     __tablename__ = 'histolossfile'
-    id = Column(Integer, primary_key=True)
-    analysis_id = Column(Integer, ForeignKey('analysis.id'))
-    vintage = Column(Integer)
-    name = Column(String(50), nullable=False)
-    losses = relationship('HistoLoss', backref='file', cascade='all, delete')
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_id = db.Column(db.Integer, db.ForeignKey('analysis.id'))
+    vintage = db.Column(db.Integer)
+    name = db.Column(db.String(50), nullable=False)
+    losses = db.relationship('HistoLoss', backref='file', cascade='all, delete')
 
     def __repr__(self):
         return f'<HistoLossFile {self.name}>'
@@ -55,12 +70,12 @@ class HistoLossFile(db.Model):
 
 class HistoLoss(db.Model):
     __tablename__ = 'histoloss'
-    id = Column(Integer, primary_key=True)
-    lossfile_id = Column(Integer, ForeignKey('histolossfile.id'))
-    year = Column(Integer)
-    premium = Column(Integer)
-    loss = Column(Integer)
-    loss_ratio = Column(Float)
+    id = db.Column(db.Integer, primary_key=True)
+    lossfile_id = db.Column(db.Integer, db.ForeignKey('histolossfile.id'))
+    year = db.Column(db.Integer)
+    premium = db.Column(db.Integer)
+    loss = db.Column(db.Integer)
+    loss_ratio = db.Column(db.Float)
 
     def __repr__(self):
         return f'<HistoLoss {self.year}: {self.premium}, {self.loss}, {self.loss_ratio}'
@@ -68,10 +83,10 @@ class HistoLoss(db.Model):
 
 class ModeledLossFile(db.Model):
     __tablename__ = 'modeledlossfile'
-    id = Column(Integer, primary_key=True)
-    analysis_id = Column(Integer, ForeignKey('analysis.id'))
-    name = Column(String(50), nullable=False)
-    losses = relationship('ModeledLoss', backref='file', cascade='all, delete')
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_id = db.Column(db.Integer, db.ForeignKey('analysis.id'))
+    name = db.Column(db.String(50), nullable=False)
+    losses = db.relationship('ModeledLoss', backref='file', cascade='all, delete')
 
     def __repr__(self):
         return f'<ModeledLossFile {self.name}>'
@@ -79,39 +94,44 @@ class ModeledLossFile(db.Model):
 
 class ModeledLoss(db.Model):
     __tablename__ = 'modeledloss'
-    id = Column(Integer, primary_key=True)
-    lossfile_id = Column(Integer, ForeignKey('modeledlossfile.id'))
-    year = Column(Integer)
-    amount = Column(Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    lossfile_id = db.Column(db.Integer, db.ForeignKey('modeledlossfile.id'))
+    year = db.Column(db.Integer)
+    amount = db.Column(db.Integer)
 
     def __repr__(self):
         return f'<ModeledLoss {self.year}: {self.amount} '
 
 
+class YearLossTable(db.Model):
+    __tablename__ = 'yearlosstable'
+    id = db.Column(db.Integer, primary_key=True)
+    analysis_id = db.Column(db.Integer, db.ForeignKey('analysis.id'))
+    name = db.Column(db.String(50))
+    view = db.Column(db.String(5))  # gross or net
+    events = db.relationship('YearLoss', backref='table', cascade='all, delete')
+
+    def __repr__(self):
+        return f'<YearLossFile {self.name}'
+
+
+class YearLoss(db.Model):
+    __tablename__ = 'yearloss'
+    id = db.Column(db.Integer, primary_key=True)
+    yearlosstable_id = db.Column(db.Integer, db.ForeignKey('yearlosstable.id'))
+    year = db.Column(db.Integer)
+    amount = db.Column(db.Float)
+
+    def __repr__(self):
+        return f'<YearLoss {self.year}: {self.amount}'
+
+
 class Restaurant(db.Model):
     __tablename__ = 'restaurant'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50))
-    street_address = Column(String(50))
-    description = Column(String(250))
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    street_address = db.Column(db.String(50))
+    description = db.Column(db.String(250))
 
     def __str__(self):
         return self.name
-
-
-class Review(db.Model):
-    __tablename__ = 'review'
-    id = Column(Integer, primary_key=True)
-    restaurant = Column(Integer, ForeignKey('restaurant.id', ondelete="CASCADE"))
-    user_name = Column(String(30))
-    rating = Column(Integer)
-    review_text = Column(String(500))
-    review_date = Column(DateTime)
-
-    @validates('rating')
-    def validate_rating(self, key, value):
-        assert value is None or (1 <= value <= 5)
-        return value
-
-    def __str__(self):
-        return f"{self.user_name}: {self.review_date:%x}"

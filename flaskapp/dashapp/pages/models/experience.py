@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
-from flaskapp.models import Analysis, HistoLossFile
+from flaskapp.models import *
 import pandas as pd
 import numpy as np
 from scipy.stats import lognorm
@@ -21,6 +21,7 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
+        dcc.Store(id=page_id + 'store'),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -47,7 +48,7 @@ def layout(analysis_id):
 @callback(
     Output(page_id + 'div-table-losses', 'children'),
     Input(page_id + 'table-lossfiles', 'active_cell'),
-    config_prevent_initial_callbacks=True,
+    config_prevent_initial_callbacks=True
 )
 def display_lossfile(active_cell):
     if active_cell:
@@ -93,6 +94,7 @@ def display_model_parameters(data):
 
 @callback(
     Output(page_id + 'div-model', 'children'),
+    Output(page_id + 'store', 'data'),
     Input(page_id + 'slider-modeling-period', 'value'),
     State(page_id + 'table-losses', 'data'),
 )
@@ -105,13 +107,18 @@ def display_model(slider_value, data):
 
     sample = df['loss_ratio'][(df['year'] >= year_min) & (df['year'] <= year_max)]
 
-    # TODO: Create a function that tkaes a sample and return an evaluation of all parameters
+    # TODO: Create a function that takes a sample and return an evaluation of all parameters
     mean = np.mean(sample)
     std = np.std(sample)
 
     mu = np.log(mean / np.sqrt(1 + std ** 2 / mean ** 2))
     scale = np.exp(mu)
     s = np.sqrt(np.log((1 + std ** 2 / mean ** 2)))
+
+    param_lognorm = {
+        's': s,
+        'scale': scale,
+    }
 
     fit_lognorm = lognorm(s=s, scale=scale)
 
@@ -129,17 +136,24 @@ def display_model(slider_value, data):
     fig = px.histogram(
         df_sample, x='loss_ratio',
         histnorm='probability density',
-        nbins=10,
+        nbins=15,
         range_x=[x[0], x[-1]],
     )
 
     fig.add_trace(px.line(df_model, x='x', y='y', color_discrete_sequence=['red']).data[0])
 
-    return html.Div([
+    layout = html.Div([
         dbc.Label('Distribution statitics'),
         html.Div(f'mean: {mean:.3f}'),
         html.Div(f'standard deviation: {std:.3f}', className='mb-3'),
         dcc.Graph(id=page_id + 'graph-distribution', figure=fig, className='mb-3'),
+        dbc.Alert(
+            'The year loss table has been saved',
+            id=page_id + 'alert-save',
+            color='success',
+            is_open=False,
+            duration=2000,
+        ),
         dbc.Button(
             'Create the gross YLT',
             id=page_id + 'btn-create-model',
@@ -150,36 +164,68 @@ def display_model(slider_value, data):
         html.Div(id=page_id + 'div-gross-ylt'),
     ]),
 
+    return layout, param_lognorm
+
 
 @callback(
     Output(page_id + 'div-gross-ylt', 'children'),
+    Output(page_id + 'alert-save', 'is_open'),
     Input(page_id + 'btn-create-model', 'n_clicks'),
+    State(page_id + 'store', 'data'),
+    State(page_id + 'location', 'pathname'),
     config_prevent_initial_callbacks=True
 )
-def create_gross_ylt(n_clicks):
-    mean = 0.569
-    std = 0.201
+def create_gross_ylt(n_clicks, data, pathname):
+    # Identify and get the analysis
+    analysis_id = str(pathname).split('/')[-1]
+    analysis = db.session.query(Analysis).get(analysis_id)
 
-    mu = np.log(mean / np.sqrt(1 + std ** 2 / mean ** 2))
-    scale = np.exp(mu)
-    s = np.sqrt(np.log((1 + std ** 2 / mean ** 2)))
+    # Create the gross YLT
+    s = data['s']
+    scale = data['scale']
 
     fit_lognorm = lognorm(s=s, scale=scale)
 
-    years = range(1, 1001)
-    loss_ratios = fit_lognorm.rvs(size=1000).tolist()
-    amounts = [int(loss_ratio * 1000000) for loss_ratio in loss_ratios]
+    # TODO: Define a function that creates a Gross YLT based on s, scale and number of draws
+    size = 1000
+    years = range(1, size + 1)
+    loss_ratios = fit_lognorm.rvs(size=size).tolist()
 
     df = pd.DataFrame(
         {
             'year': years,
-            'amount': amounts
+            'amount': loss_ratios
         }
     )
 
-    return dash_table.DataTable(
+    # TODO: Create an input for the name of the YLT
+    # Save the year loss table in the database
+    yearlosstable = YearLossTable(
+        analysis_id=analysis.id,
+        view='gross',
+    )
+
+    db.session.add(yearlosstable)
+    db.session.commit()
+
+    yearlosstable.name = f'YLT {yearlosstable.id}'
+    db.session.commit()
+
+    # Save the events of the year loss table in the database
+    for index, row in df.iterrows():
+        yearloss = YearLoss(
+            yearlosstable_id=yearlosstable.id,
+            year=row['year'],
+            amount=row['amount']
+        )
+        db.session.add(yearloss)
+        db.session.commit()
+
+    table_yearlosses = dash_table.DataTable(
         data=df.to_dict('records'),
         css=get_datatable_css(),
         style_header=get_datatable_style_header(),
         style_cell=get_datatable_style_cell(),
     )
+
+    return table_yearlosses, True

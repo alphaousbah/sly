@@ -2,12 +2,12 @@ import dash
 from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
-from flaskapp.models import Analysis
+from flaskapp.models import *
 from flaskapp.extensions import db
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
-dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=1)
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
 page_id = get_page_id(__name__)
 
 
@@ -16,6 +16,7 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
+        dcc.Store(id=page_id + 'store'),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
 
@@ -48,7 +49,7 @@ def layout(analysis_id):
                                     dbc.Button('Update', id=page_id + 'btn-update', className='button'),
                                     dbc.Alert(
                                         "The analysis has been updated",
-                                        id=page_id + 'alert-update',
+                                        id=page_id + 'alert-save',
                                         is_open=False,
                                         duration=2000,
                                     ),
@@ -64,13 +65,13 @@ def layout(analysis_id):
 
 
 @callback(
-    Output(page_id + 'alert-update', 'is_open'),
+    Output(page_id + 'alert-save', 'is_open'),
     Input(page_id + 'btn-update', 'n_clicks'),
     State(page_id + 'location', 'pathname'),
     State(page_id + 'input-quote', 'value'),
     State(page_id + 'input-name', 'value'),
     State(page_id + 'input-client', 'value'),
-    State(page_id + 'alert-update', 'is_open'),
+    State(page_id + 'alert-save', 'is_open'),
     config_prevent_initial_callbacks=True
 )
 def update_analysis(n_clicks, pathname, quote, name, client, is_open):

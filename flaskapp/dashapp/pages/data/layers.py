@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
-from flaskapp.models import Analysis, Layer
+from flaskapp.models import *
 import pandas as pd
 from io import StringIO
 
@@ -19,6 +19,7 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
+        dcc.Store(id=page_id + 'store'),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
