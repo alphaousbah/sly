@@ -57,7 +57,7 @@ def layout(analysis_id):
                             ]),
                         ]),
                     ], className='card'),
-                ], width=10),
+                ], width=8),
             ]),
 
         ], className='div-standard')

@@ -29,7 +29,7 @@ def layout():
                         get_table_analyses(page_id + 'table_analyses', Analysis.query.all()),
                         id=page_id + 'div-table-analyses'
                     ),
-                ]),
+                ], width=6),
             ]),
         ], className='div-standard'),
     ]),

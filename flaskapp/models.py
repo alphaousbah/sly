@@ -78,7 +78,7 @@ class HistoLoss(db.Model):
     loss_ratio = db.Column(db.Float)
 
     def __repr__(self):
-        return f'<HistoLoss {self.year}: {self.premium}, {self.loss}, {self.loss_ratio}'
+        return f'<HistoLoss {self.year}: {self.premium}, {self.loss}, {self.loss_ratio}>'
 
 
 class ModeledLossFile(db.Model):
@@ -100,7 +100,7 @@ class ModeledLoss(db.Model):
     amount = db.Column(db.Integer)
 
     def __repr__(self):
-        return f'<ModeledLoss {self.year}: {self.amount} '
+        return f'<ModeledLoss {self.year}: {self.amount}>'
 
 
 class YearLossTable(db.Model):
@@ -112,7 +112,7 @@ class YearLossTable(db.Model):
     events = db.relationship('YearLoss', backref='table', cascade='all, delete')
 
     def __repr__(self):
-        return f'<YearLossFile {self.name}'
+        return f'<YearLossTable {self.name}>'
 
 
 class YearLoss(db.Model):
@@ -123,15 +123,4 @@ class YearLoss(db.Model):
     amount = db.Column(db.Float)
 
     def __repr__(self):
-        return f'<YearLoss {self.year}: {self.amount}'
-
-
-class Restaurant(db.Model):
-    __tablename__ = 'restaurant'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50))
-    street_address = db.Column(db.String(50))
-    description = db.Column(db.String(250))
-
-    def __str__(self):
-        return self.name
+        return f'<YearLoss {self.year}: {self.amount}>'

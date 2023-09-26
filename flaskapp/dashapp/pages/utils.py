@@ -52,7 +52,7 @@ def get_nav_top():
                         label='Dropdown',
                         className='me-auto',  # The following navitems will be on the right of the navbar
                     ),
-                    dbc.NavLink('add@flask.login', href='#'),
+                    dbc.NavLink('abah@ccr-re.fr (add Flask Login)', href='#'),
                 ],
                     className='w-100',
                 ),
@@ -189,11 +189,10 @@ def get_page_id(module):
 
 def df_from_query(query):
     # https://stackoverflow.com/questions/1958219/how-to-convert-sqlalchemy-row-object-to-a-python-dict
-    list_from_query = [{col.name: str(getattr(record, col.name)) for col in record.__table__.columns} for record in
-                       query]
-    df = pd.DataFrame(list_from_query)
+    list_from_query = \
+        [{col.name: str(getattr(record, col.name)) for col in record.__table__.columns} for record in query]
 
-    return df
+    return pd.DataFrame(list_from_query)
 
 
 def get_table_analyses(component_id, query):
@@ -306,6 +305,34 @@ def get_table_losses(component_id, query):
             page_action='native',
             page_current=0,
             page_size=20,
+            css=get_datatable_css(),
+            style_header=get_datatable_style_header(),
+            style_cell=get_datatable_style_cell(),
+            style_data_conditional=[],
+        )
+
+    return None
+
+
+def get_table_ylts(component_id, query):
+    if query:
+        df = df_from_query(query)
+
+        return dash_table.DataTable(
+            id=component_id,
+            data=df.to_dict('records'),
+            columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
+            hidden_columns=['id', 'analysis_id'],
+            sort_by=[{'column_id': 'year', 'direction': 'asc'}],
+            editable=False,
+            filter_action='none',
+            sort_action='native',
+            sort_mode='multi',
+            row_selectable=True,
+            selected_rows=[],
+            page_action='native',
+            page_current=0,
+            page_size=10,
             css=get_datatable_css(),
             style_header=get_datatable_style_header(),
             style_cell=get_datatable_style_cell(),

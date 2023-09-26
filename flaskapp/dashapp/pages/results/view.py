@@ -16,7 +16,6 @@ def layout(analysis_id):
     return html.Div([
         get_title(__name__, analysis_name),
         get_nav_middle(__name__, analysis_id),
-        get_nav_bottom(__name__, analysis_id),
 
         html.Div([
             dbc.Row([
