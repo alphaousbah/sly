@@ -46,7 +46,8 @@ def register_dashapp(flask_app):
         use_pages=True,
         pages_folder='dashapp/pages',
         meta_tags=[meta_viewport],
-        external_stylesheets=[dbc.themes.COSMO]
+        # external_stylesheets=[dbc.themes.SKETCHY],
+        external_stylesheets=[dbc.themes.COSMO],
     )
 
     with flask_app.app_context():

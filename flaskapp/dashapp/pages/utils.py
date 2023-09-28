@@ -18,6 +18,7 @@ Functions:
 import dash
 from dash import html, dash_table
 import dash_bootstrap_components as dbc
+import numpy as np
 import pandas as pd
 
 
@@ -366,4 +367,21 @@ def get_datatable_style_cell():
         'textAlign': 'left',
         'padding': '0.5rem',
         'border': '1px solid #dee2e6',
+    }
+
+
+def get_lognorm_param(serie):
+    mean = np.mean(serie)
+    std = np.std(serie)
+
+    mu = np.log(mean / np.sqrt(1 + std ** 2 / mean ** 2))
+    scale = np.exp(mu)
+    s = np.sqrt(np.log((1 + std ** 2 / mean ** 2)))
+
+    return {
+        'mean': mean,
+        'std': std,
+        'mu': mu,
+        'scale': scale,
+        's': s
     }
