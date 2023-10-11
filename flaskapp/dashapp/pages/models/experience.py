@@ -18,7 +18,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
@@ -54,9 +54,8 @@ def layout(analysis_id):
 def display_lossfile(active_cell):
     if active_cell:
         # Display the loss set
-        # https://stackoverflow.com/questions/55157682/hover-data-and-click-data-from-dash-table-on-dash
         lossfile_id = active_cell['row_id']
-        lossfile = db.session.query(HistoLossFile).get(lossfile_id)
+        lossfile = db.session.get(HistoLossFile, lossfile_id)
 
         table_losses = get_table_losses(page_id + 'table-losses', lossfile.losses)
 
@@ -133,7 +132,8 @@ def update_options_year_max(value, data):
     State(page_id + 'table-losses', 'data'),
 )
 def display_model(value_year_min, value_year_max, data):
-    df = pd.DataFrame(data).astype(float)
+    df = pd.DataFrame(data)
+    df['loss_ratio'] = df['loss_ratio'].astype(float)
     df['year'] = df['year'].astype(int)
 
     year_min = int(value_year_min)
@@ -176,14 +176,14 @@ def display_model(value_year_min, value_year_max, data):
         dbc.Row([
             dbc.Col([
                 dbc.Col([
-                    html.Div('4. Create the gross YLT', className='h5 mb-3'),
+                    html.Div('4. Save the loss model', className='h5 mb-3'),
                 ]),
             ]),
         ]),
         dbc.Row([
             dbc.Col([
                 dbc.Alert(
-                    'The year loss table has been saved',
+                    'The loss model has been saved as a YLT',
                     id=page_id + 'alert-save',
                     color='success',
                     is_open=False,
@@ -194,14 +194,14 @@ def display_model(value_year_min, value_year_max, data):
         dbc.Row([
             dbc.Col([
                 dmc.TextInput(
-                    id=page_id + 'input-name-gross-ylt',
-                    placeholder='Enter the name of the gross YLT',
+                    id=page_id + 'input-name-loss-model',
+                    placeholder='Enter the name of the loss model',
                 ),
             ]),
             dbc.Col([
                 dbc.Button(
-                    'Create',
-                    id=page_id + 'btn-create-model',
+                    'Save',
+                    id=page_id + 'btn-save-model',
                     outline=True,
                     color='primary',
                     className='button',
@@ -221,16 +221,16 @@ def display_model(value_year_min, value_year_max, data):
 @callback(
     Output(page_id + 'div-gross-ylt', 'children'),
     Output(page_id + 'alert-save', 'is_open'),
-    Input(page_id + 'btn-create-model', 'n_clicks'),
+    Input(page_id + 'btn-save-model', 'n_clicks'),
     State(page_id + 'location', 'pathname'),
     State(page_id + 'store', 'data'),
-    State(page_id + 'input-name-gross-ylt', 'value'),
+    State(page_id + 'input-name-loss-model', 'value'),
     config_prevent_initial_callbacks=True
 )
-def create_gross_ylt(n_clicks, pathname, data, value):
+def save_loss_model(n_clicks, pathname, data, value):
     # Identify and get the analysis
     analysis_id = str(pathname).split('/')[-1]
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     # Create the gross YLT
     s = data['s']
@@ -245,20 +245,19 @@ def create_gross_ylt(n_clicks, pathname, data, value):
     df = pd.DataFrame({'year': years, 'amount': loss_ratios})
 
     # Save the year loss table in the database
-    yearlosstable = YearLossTable(
+    modelfile = ModelFile(
         analysis_id=analysis.id,
         name=value,
-        view='gross',
     )
-    db.session.add(yearlosstable)
+    db.session.add(modelfile)
     db.session.commit()
 
     # Save the events of the year loss table in the database
     for index, row in df.iterrows():
-        yearloss = YearLoss(
-            yearlosstable_id=yearlosstable.id,
+        yearloss = ModelYearLoss(
             year=row['year'],
-            amount=row['amount']
+            amount=row['amount'],
+            modelfile_id=modelfile.id
         )
         db.session.add(yearloss)
         db.session.commit()

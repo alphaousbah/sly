@@ -15,7 +15,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
@@ -82,7 +82,7 @@ for i in [1, 2, 3, 4, 5]:
     )
     def create_layers(n_clicks, pathname, n_layers):  # n_layers = children property of btn-create
         analysis_id = str(pathname).split('/')[-1]
-        analysis = db.session.query(Analysis).get(analysis_id)
+        analysis = db.session.get(Analysis, analysis_id)
         n_layers = int(n_layers[0])
 
         for i in range(1, n_layers + 1):
@@ -111,11 +111,11 @@ def delete_layers(n_clicks, selected_row_ids, pathname):
 
     # Identify and get the analysis
     analysis_id = str(pathname).split('/')[-1]
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     # Delete the selected layers
     for layer_id in selected_row_ids:
-        layer = db.session.query(Layer).get(layer_id)
+        layer = db.session.get(Layer, layer_id)
         db.session.delete(layer)
         db.session.commit()
 
@@ -148,7 +148,7 @@ def inform_layers_modified(data):
 )
 def save_layers(n_clicks, data):
     for row in data:
-        layer = db.session.query(Layer).get(row['id'])
+        layer = db.session.get(Layer, row['id'])
 
         layer.premium = int(row['premium'])
         layer.deductible = int(row['deductible'])

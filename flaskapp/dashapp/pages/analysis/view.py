@@ -12,7 +12,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
@@ -77,7 +77,7 @@ def layout(analysis_id):
 def update_analysis(n_clicks, pathname, quote, name, client, is_open):
     analysis_id = str(pathname).split('/')[-1]
 
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
     analysis.quote = quote
     analysis.name = name
     analysis.client = client

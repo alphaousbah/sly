@@ -13,6 +13,8 @@ def create_app():
     register_blueprints(app)
     register_dashapp(app)
 
+    from flaskapp import models
+
     return app
 
 

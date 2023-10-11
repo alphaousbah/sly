@@ -70,14 +70,15 @@ def get_nav_top():
     )
 
 
-def get_title(module, analysis_name=None):
+def get_title(module, analysis_name):
     directory_name = get_directory(module)['directory']
     page_name = get_directory(module)['page']
 
     if page_name != directory_name:
-        string_title = analysis_name + ' | ' + directory_name.capitalize() + ' | ' + page_name.capitalize()
+        string_title = str(analysis_name) + ' | ' + str(directory_name).capitalize() + ' | ' + str(
+            page_name).capitalize()
     else:
-        string_title = analysis_name + ' | ' + directory_name.capitalize()
+        string_title = str(analysis_name) + ' | ' + str(directory_name).capitalize()
 
     title = html.Div(
         html.H5(string_title, className='title')
@@ -295,7 +296,7 @@ def get_table_losses(component_id, query):
             id=component_id,
             data=df.to_dict('records'),
             columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'lossfile_id'],
+            hidden_columns=['id', 'lossfile_id', 'name'],
             sort_by=[{'column_id': 'year', 'direction': 'asc'}],
             editable=False,
             filter_action='none',
@@ -315,7 +316,7 @@ def get_table_losses(component_id, query):
     return None
 
 
-def get_table_ylts(component_id, query):
+def get_table_modelfiles(component_id, query):
     if query:
         df = df_from_query(query)
 

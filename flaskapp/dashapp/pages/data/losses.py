@@ -15,7 +15,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     # Define the modal that is used to add a loss file
     modal_add_lossfile = html.Div([
@@ -42,7 +42,7 @@ def layout(analysis_id):
                             style={'width': '100%', 'height': 300},
                             className='mb-2',
                         ),
-                        dbc.Button('Load', id=page_id + 'btn-load', className='mb-2 button'),
+                        dbc.Button('Load', id=page_id + 'btn-save', className='mb-2 button'),
                         dbc.Alert(
                             'The loss file has been loaded',
                             id=page_id + 'alert-save',
@@ -103,18 +103,18 @@ def toggle_modal(n_clicks, is_open):
 @callback(
     Output(page_id + 'alert-save', 'is_open'),
     Output(page_id + 'div-table-lossfiles', 'children', allow_duplicate=True),
-    Input(page_id + 'btn-load', 'n_clicks'),
+    Input(page_id + 'btn-save', 'n_clicks'),
     State(page_id + 'location', 'pathname'),
     State(page_id + 'text-area', 'value'),
     State(page_id + 'input-vintage', 'value'),
     State(page_id + 'input-name', 'value'),
-    State(page_id + 'btn-load', 'is_open'),
+    State(page_id + 'btn-save', 'is_open'),
     config_prevent_initial_callbacks=True
 )
-def create_lossfile(n_clicks, pathname, data, vintage, name, is_open):
+def save_lossfile(n_clicks, pathname, data, vintage, name, is_open):
     # Save the new loss file in the database
     analysis_id = str(pathname).split('/')[-1]  # https://dash.plotly.com/dash-core-components/location
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
     lossfile = HistoLossFile(
         analysis_id=analysis.id,
         vintage=vintage,
@@ -126,8 +126,7 @@ def create_lossfile(n_clicks, pathname, data, vintage, name, is_open):
     df_losses = pd.read_csv(StringIO(data), sep='\t')
     df_losses['loss_ratio'] = df_losses['loss_ratio'].str.replace(',', '.').astype(float)
 
-    # Loop through the rows of a dataframe :
-    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    # Loop through the rows of a dataframe: https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     for index, row in df_losses.iterrows():
         loss = HistoLoss(
             lossfile_id=lossfile.id,
@@ -154,7 +153,7 @@ def display_losses(active_cell):
     if active_cell:
         # https://stackoverflow.com/questions/55157682/hover-data-and-click-data-from-dash-table-on-dash
         lossfile_id = active_cell['row_id']
-        lossfile = db.session.query(HistoLossFile).get(lossfile_id)
+        lossfile = db.session.get(HistoLossFile, lossfile_id)
 
         table_losses = get_table_losses(page_id + 'table-losses', lossfile.losses)
 
@@ -176,11 +175,11 @@ def delete_lossfiles(n_clicks, selected_row_ids, pathname):
 
     # Identify and get the analysis
     analysis_id = str(pathname).split('/')[-1]
-    analysis = db.session.query(Analysis).get(analysis_id)
+    analysis = db.session.get(Analysis, analysis_id)
 
     # Delete the selected loss files
     for lossfile_id in selected_row_ids:
-        lossfile = db.session.query(HistoLossFile).get(lossfile_id)
+        lossfile = db.session.get(HistoLossFile, lossfile_id)
         db.session.delete(lossfile)
         db.session.commit()
 

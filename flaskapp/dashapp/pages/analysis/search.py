@@ -12,6 +12,7 @@ page_id = get_page_id(__name__)
 
 
 def layout():
+    print(Analysis.query.all())
     return html.Div([
         html.H5('Analysis Search', className='title'),
         html.Div([
@@ -26,9 +27,13 @@ def layout():
             dbc.Row([
                 dbc.Col([
                     html.Div(
-                        get_table_analyses(page_id + 'table_analyses', Analysis.query.all()),
+                        get_table_analyses(page_id + 'table-analyses', Analysis.query.all()),
                         id=page_id + 'div-table-analyses'
                     ),
+                    # html.Div(
+                    #     get_table_analyses(page_id + 'table_analyses', Analysis.query.all()),
+                    #     id=page_id + 'div-table-analyses'
+                    # ),
                 ], width=6),
             ]),
         ], className='div-standard'),
@@ -42,12 +47,13 @@ def layout():
     State(page_id + 'table-analyses', 'selected_row_ids'),
 )
 def delete_analyses(n_clicks, selected_row_ids):
+    print('entered callback')
     if n_clicks is None or selected_row_ids is None:
         raise PreventUpdate
 
-    # Deleted selected analyses
+    # Delete selected analyses
     for analysis_id in selected_row_ids:
-        analysis = db.session.query(Analysis).get(analysis_id)
+        analysis = db.session.get(Analysis, analysis_id)
         db.session.delete(analysis)
         db.session.commit()
 
@@ -55,3 +61,4 @@ def delete_analyses(n_clicks, selected_row_ids):
     table_analyses = get_table_analyses(page_id + 'table-analyses', Analysis.query.all())
 
     return table_analyses
+

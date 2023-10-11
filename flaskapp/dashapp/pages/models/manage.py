@@ -14,9 +14,7 @@ page_id = get_page_id(__name__)
 
 
 def layout(analysis_id):
-    analysis = db.session.query(Analysis).get(analysis_id)
-
-    gross_ylts = db.session.query(YearLossTable).filter(YearLossTable.view == 'gross').all()
+    analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
         dcc.Location(id=page_id + 'location'),
@@ -34,12 +32,12 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     html.Div(
-                        get_table_ylts(page_id + 'table_ylts', gross_ylts),
-                        id=page_id + 'div-table-ylts'
+                        get_table_modelfiles(page_id + 'table-modelfiles', analysis.modelfiles),
+                        id=page_id + 'div-table-modelfiles'
                     ),
                 ], width=6),
                 dbc.Col([
-                    'Display OEP curve when YLT selected',
+                    'Display the OEP curve of the selected model file',
                 ], width=6),
             ]),
         ], className='div-standard')
