@@ -116,7 +116,7 @@ def get_chapter_target(chapter):
         case 'models':
             return 'experience'
         case 'results':
-            return 'view'
+            return 'manage'
 
 
 def get_nav_bottom(module, analysis_id):
@@ -369,6 +369,16 @@ def get_datatable_style_cell():
         'padding': '0.5rem',
         'border': '1px solid #dee2e6',
     }
+
+
+def get_button_outline(component_id, name):
+    return dbc.Button(
+        name,
+        id=component_id,
+        outline=True,
+        color='primary',
+        className='button',
+    )
 
 
 def get_lognorm_param(serie):

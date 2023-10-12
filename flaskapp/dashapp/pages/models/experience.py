@@ -20,6 +20,11 @@ page_id = get_page_id(__name__)
 def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
+    if analysis.histolossfiles:
+        table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)
+    else:
+        table_lossfiles = 'No loss files added to the analysis'
+
     return html.Div([
         dcc.Location(id=page_id + 'location'),
         dcc.Store(id=page_id + 'store'),
@@ -32,7 +37,7 @@ def layout(analysis_id):
                 dbc.Col([
                     html.Div('1. Select a loss file:', className='h5 mb-3'),
                     html.Div(
-                        get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles),
+                        table_lossfiles,
                         id=page_id + 'div-table-lossfiles',
                         className='mb-4',
                     ),
@@ -187,25 +192,19 @@ def display_model(value_year_min, value_year_max, data):
                     id=page_id + 'alert-save',
                     color='success',
                     is_open=False,
-                    duration=2000,
+                    duration=4000,
                 ),
             ]),
         ], className='mb-3'),
         dbc.Row([
             dbc.Col([
                 dmc.TextInput(
-                    id=page_id + 'input-name-loss-model',
+                    id=page_id + 'input-name-modelfile',
                     placeholder='Enter the name of the loss model',
                 ),
             ]),
             dbc.Col([
-                dbc.Button(
-                    'Save',
-                    id=page_id + 'btn-save-model',
-                    outline=True,
-                    color='primary',
-                    className='button',
-                ),
+                get_button_outline(page_id + 'btn-save-model', 'Save'),
             ]),
         ], className='mb-3'),
         dbc.Row([
@@ -224,7 +223,7 @@ def display_model(value_year_min, value_year_max, data):
     Input(page_id + 'btn-save-model', 'n_clicks'),
     State(page_id + 'location', 'pathname'),
     State(page_id + 'store', 'data'),
-    State(page_id + 'input-name-loss-model', 'value'),
+    State(page_id + 'input-name-modelfile', 'value'),
     config_prevent_initial_callbacks=True
 )
 def save_loss_model(n_clicks, pathname, data, value):

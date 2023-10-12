@@ -1,7 +1,8 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State
+from dash import html, dcc, dash_table, callback, Output, Input, State, ALL
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
@@ -9,7 +10,7 @@ import pandas as pd
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
-dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>')
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=3)
 page_id = get_page_id(__name__)
 
 
@@ -26,19 +27,21 @@ def layout(analysis_id):
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    get_button_outline(page_id + 'btn-delete', 'Delete'),
+                    get_button_outline(page_id + 'btn-process', 'Process'),
                 ]),
             ]),
             dbc.Row([
                 dbc.Col([
-                    html.Div(
-                        get_table_modelfiles(page_id + 'table-modelfiles', analysis.modelfiles),
-                        id=page_id + 'div-table-modelfiles'
-                    ),
-                ], width=6),
+
+                ]),
                 dbc.Col([
-                    'Display the OEP curve of the selected model file',
-                ], width=6),
+
+                ]),
+            ]),
+            dbc.Row([
+                dbc.Col([
+
+                ]),
             ]),
         ], className='div-standard')
     ])

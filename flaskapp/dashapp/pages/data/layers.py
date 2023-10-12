@@ -43,10 +43,8 @@ def layout(analysis_id):
                             'background': '#f5f8fa',
                         }
                     ),
-                    dbc.Button('Save Layers', id=page_id + 'btn-save', outline=True, color='primary',
-                               className='button'),
-                    dbc.Button('Delete Layers', id=page_id + 'btn-delete', outline=True, color='primary',
-                               className='button'),
+                    get_button_outline(page_id + 'btn-save', 'Save Layers'),
+                    get_button_outline(page_id + 'btn-delete', 'Delete Layers'),
                 ])
             ]),
             dbc.Row([
@@ -61,7 +59,7 @@ def layout(analysis_id):
                             'The layers have been deleted',
                             id=page_id + 'alert-layers-deleted',
                             is_open=False,
-                            duration=2000
+                            duration=4000
                         ),
                         html.Div(id=page_id + 'div-layers-modified'),
                     ]),
@@ -86,7 +84,8 @@ for i in [1, 2, 3, 4, 5]:
         n_layers = int(n_layers[0])
 
         for i in range(1, n_layers + 1):
-            layer = Layer(analysis_id=analysis.id)
+            layer = Layer(analysis_id=analysis_id)
+            layer.premium = 0
             layer.deductible = 0
             layer.limit = 0
             db.session.add(layer)
@@ -136,7 +135,6 @@ def inform_layers_modified(data):
         id=page_id + 'alert-layers-modified',
         color='danger',
     )
-
     return alert
 
 
@@ -149,7 +147,7 @@ def inform_layers_modified(data):
 def save_layers(n_clicks, data):
     for row in data:
         layer = db.session.get(Layer, row['id'])
-
+        layer.name = row['name']
         layer.premium = int(row['premium'])
         layer.deductible = int(row['deductible'])
         layer.limit = int(row['limit'])
@@ -160,6 +158,6 @@ def save_layers(n_clicks, data):
         id=page_id + 'alert-layers-modified',
         color='success',
         is_open=True,
-        duration=2000,
+        duration=4000,
     )
     return alert

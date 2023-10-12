@@ -47,7 +47,7 @@ def layout(analysis_id):
                             'The loss file has been loaded',
                             id=page_id + 'alert-save',
                             is_open=False,
-                            duration=2000,
+                            duration=4000,
                         ),
                     ]),
                 ]),
@@ -70,8 +70,8 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     modal_add_lossfile,
-                    dbc.Button('Add', id=page_id + 'btn-add', outline=True, color='primary', className='button'),
-                    dbc.Button('Delete', id=page_id + 'btn-delete', outline=True, color='primary', className='button'),
+                    get_button_outline(page_id + 'btn-add', 'Add'),
+                    get_button_outline(page_id + 'btn-delete', 'Delete'),
                 ])
             ]),
             dbc.Row([
