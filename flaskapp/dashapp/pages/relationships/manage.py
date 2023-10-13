@@ -57,8 +57,7 @@ def layout(analysis_id):
         component_select_modelfiles.append(select_modelfiles)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),

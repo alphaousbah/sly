@@ -59,8 +59,7 @@ def layout(analysis_id):
         component_select_modelfiles.append(select_modelfiles)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -79,7 +78,7 @@ def layout(analysis_id):
                     ),
                 ], width=3),
                 dbc.Col([
-                    get_button_outline(page_id + 'btn-save', 'Save'),
+                    get_button(page_id + 'btn-save', 'Save'),
                 ], width=3),
             ]),
             dbc.Row([
@@ -109,18 +108,18 @@ def inform_relationships_modified(value):
 @callback(
     Output(page_id + 'div-relationships-modified', 'children'),
     Input(page_id + 'btn-save', 'n_clicks'),
-    State(page_id + 'location', 'pathname'),
+    State(page_id + 'store', 'data'),
     State({'page_id': page_id, 'type': 'select-modelfiles', 'layer_id': ALL}, 'id'),
     State({'page_id': page_id, 'type': 'select-modelfiles', 'layer_id': ALL}, 'value'),
     State(page_id + 'input-name-relationships', 'value'),
     config_prevent_initial_callbacks=True
 )
-def save_relationships(n_clicks, pathname, id_, value, name):
+def save_relationships(n_clicks, data, id_, value, name):
     # id_ is a list of dictionaries that contains the layer id for each select component
     # e.g. [{'page_id': page_id, 'type': 'select-modelfiles', 'layer_id': 1}, {'page_id': page_id, 'type': 'select-modelfiles', 'layer_id': 2}]
     # value is a list of the lists that give the ids of the selected model files for each layer
     # e.g. [[54, 65], [54], [54]]
-    analysis_id = str(pathname).split('/')[-1]
+    analysis_id = data['analysis_id']
     n_layers = len(id_)
 
     # Save the pricing relationship file

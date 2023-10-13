@@ -1,16 +1,33 @@
 """
-This module defines functions for generating components commonly used in a Dash web application,
-such as navigation bars, page titles, and navigation menus.
+This module defines various utility functions and components for the application.
 
 Functions:
-- `get_nav_top`: Generates the top navigation bar with links and a logo.
-- `get_title`: Generates the page title based on the module and analysis name.
-- `get_nav_middle`: Generates a navigation menu for the middle section of the page.
-- `get_nav_bottom`: Generates a navigation menu for the bottom section of the page.
-- `get_directory`: Extracts the directory and page names from a modulestring.
-- `get_navloc`: Determines the navigation location based on the page name.
-- `get_page_id`: Generates a unique page ID based on the directory and page names.
-- `query_to_list`: Converts a SQLAlchemy query result to a list of dictionaries.
+- get_nav_top(): Create the top navigation bar with a logo and links.
+- get_title(module, analysis_name): Generate a title for a specific page within the application.
+- get_nav_middle(module, analysis_id): Create a middle navigation bar with links to different sections.
+- get_chapter_target(chapter): Determine the target page for a given section (e.g., 'analysis', 'data').
+- get_nav_bottom(module, analysis_id): Create a bottom navigation bar with links to additional pages.
+- get_directory(module): Extract the directory and page names from a module path.
+- get_navloc(module): Determine the navigation location for a given page.
+- get_page_id(module): Generate a unique page ID based on the directory and page names.
+- df_from_query(query): Convert SQLAlchemy query results into a pandas DataFrame.
+- get_table_analyses(component_id, query): Generate a data table for analysis records.
+- get_table_layers(component_id, query): Generate a data table for layers records.
+- get_table_lossfiles(component_id, query): Generate a data table for loss files records.
+- get_table_losses(component_id, query): Generate a data table for loss records.
+- get_table_modelfiles(component_id, query): Generate a data table for model files records.
+- get_table_relationships(component_id, query): Generate a data table for relationship records.
+- get_datatable_style_header(): Define the style for data table headers.
+- get_datatable_css(): Define custom CSS rules for data tables.
+- get_datatable_style_cell(): Define the style for data table cells.
+- get_button(component_id, name): Create a button component.
+- get_lognorm_param(serie): Calculate log-normal distribution parameters from a data series.
+
+Dependencies:
+- dash
+- dash_bootstrap_components
+- numpy
+- pandas
 
 """
 
@@ -18,6 +35,8 @@ Functions:
 import dash
 from dash import html, dash_table
 import dash_bootstrap_components as dbc
+from flaskapp.extensions import db
+from flaskapp.models import *
 import numpy as np
 import pandas as pd
 
@@ -344,6 +363,48 @@ def get_table_modelfiles(component_id, query):
     return None
 
 
+def get_table_relationships(component_id, query):
+    if query:
+        df = df_from_query(query)
+
+        def f(row):
+            # If the pricing relationships has already been processed, create a link to the result
+            if db.session.query(Result).filter_by(analysis_id=row['analysis_id'],
+                                                  pricingrelationship_id=row['id']).first():
+                return '[View result](/dashapp/results/view/' + row['analysis_id'] + '?result_id=' + row['id'] + ')'
+            else:
+                return 'Process to get result'
+
+        df['result'] = df.apply(f, axis=1)
+
+        return dash_table.DataTable(
+            id=component_id,
+            data=df.to_dict('records'),
+            columns=[{'id': col, 'name': str(col).capitalize(), 'presentation': 'markdown'} for col in df.columns],
+            markdown_options={'link_target': '_self'},
+            hidden_columns=['id', 'analysis_id'],
+            sort_by=[{'column_id': 'id', 'direction': 'asc'}],
+            editable=False,
+            filter_action='native',
+            sort_action='native',
+            sort_mode='multi',
+            row_selectable='multi',
+            selected_rows=[],
+            page_action='native',
+            page_current=0,
+            page_size=10,
+            css=get_datatable_css(),
+            style_header=get_datatable_style_header(),
+            style_cell=get_datatable_style_cell(),
+            style_data_conditional=[
+                # Disable highlighting active cell
+                {'if': {'state': 'selected'}, 'backgroundColor': 'inherit !important', 'border': 'inherit !important'},
+            ]
+        )
+
+    return None
+
+
 def get_datatable_style_header():
     return {
         'backgroundColor': 'whitesmoke',
@@ -371,7 +432,7 @@ def get_datatable_style_cell():
     }
 
 
-def get_button_outline(component_id, name):
+def get_button(component_id, name):
     return dbc.Button(
         name,
         id=component_id,

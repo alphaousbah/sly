@@ -16,8 +16,7 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
 
@@ -68,15 +67,15 @@ def layout(analysis_id):
 @callback(
     Output(page_id + 'alert-save', 'is_open'),
     Input(page_id + 'btn-update', 'n_clicks'),
-    State(page_id + 'location', 'pathname'),
+    State(page_id + 'store', 'data'),
     State(page_id + 'input-quote', 'value'),
     State(page_id + 'input-name', 'value'),
     State(page_id + 'input-client', 'value'),
     State(page_id + 'alert-save', 'is_open'),
     config_prevent_initial_callbacks=True
 )
-def update_analysis(n_clicks, pathname, quote, name, client, is_open):
-    analysis_id = str(pathname).split('/')[-1]
+def update_analysis(n_clicks, data, quote, name, client, is_open):
+    analysis_id = data['analysis_id']
 
     analysis = db.session.get(Analysis, analysis_id)
     analysis.quote = quote

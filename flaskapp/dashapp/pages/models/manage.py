@@ -17,8 +17,7 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -26,7 +25,7 @@ def layout(analysis_id):
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    get_button_outline(page_id + 'btn-delete', 'Delete'),
+                    get_button(page_id + 'btn-delete', 'Delete'),
                 ]),
             ]),
             dbc.Row([

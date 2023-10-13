@@ -26,8 +26,7 @@ def layout(analysis_id):
         table_lossfiles = 'No loss files added to the analysis'
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -134,10 +133,11 @@ def update_options_year_max(value, data):
     Output(page_id + 'store', 'data'),
     Input(page_id + 'select-start-modeling-period', 'value'),
     Input(page_id + 'select-end-modeling-period', 'value'),
+    State(page_id + 'store', 'data'),
     State(page_id + 'table-losses', 'data'),
 )
-def display_model(value_year_min, value_year_max, data):
-    df = pd.DataFrame(data)
+def display_model(value_year_min, value_year_max, data_store, data_table):
+    df = pd.DataFrame(data_table)
     df['loss_ratio'] = df['loss_ratio'].astype(float)
     df['year'] = df['year'].astype(int)
 
@@ -204,34 +204,42 @@ def display_model(value_year_min, value_year_max, data):
                 ),
             ]),
             dbc.Col([
-                get_button_outline(page_id + 'btn-save-model', 'Save'),
+                get_button(page_id + 'btn-save-model', 'Save'),
             ]),
         ], className='mb-3'),
         dbc.Row([
             dbc.Col([
-                html.Div(id=page_id + 'div-gross-ylt'),
+                html.Div(id=page_id + 'div-modelyearloss'),
             ]),
         ]),
     ]),
 
-    return layout, param_lognorm
+    data_store = data_store | param_lognorm  # Merge the 2 dictionaries with the '|' operator
+
+    return layout, data_store
 
 
 @callback(
-    Output(page_id + 'div-gross-ylt', 'children'),
+    Output(page_id + 'div-modelyearloss', 'children'),
     Output(page_id + 'alert-save', 'is_open'),
     Input(page_id + 'btn-save-model', 'n_clicks'),
-    State(page_id + 'location', 'pathname'),
     State(page_id + 'store', 'data'),
     State(page_id + 'input-name-modelfile', 'value'),
     config_prevent_initial_callbacks=True
 )
-def save_loss_model(n_clicks, pathname, data, value):
-    # Identify and get the analysis
-    analysis_id = str(pathname).split('/')[-1]
+def save_loss_model(n_clicks, data, value):
+    analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
 
-    # Create the gross YLT
+    # Save the model file
+    modelfile = ModelFile(
+        analysis_id=analysis.id,
+        name=value,
+    )
+    db.session.add(modelfile)
+    db.session.commit()
+
+    # Create the model file year losses
     s = data['s']
     scale = data['scale']
     fit_lognorm = lognorm(s=s, scale=scale)
@@ -243,15 +251,7 @@ def save_loss_model(n_clicks, pathname, data, value):
 
     df = pd.DataFrame({'year': years, 'amount': loss_ratios})
 
-    # Save the year loss table in the database
-    modelfile = ModelFile(
-        analysis_id=analysis.id,
-        name=value,
-    )
-    db.session.add(modelfile)
-    db.session.commit()
-
-    # Save the events of the year loss table in the database
+    # Save the model file year losses
     for index, row in df.iterrows():
         yearloss = ModelYearLoss(
             year=row['year'],

@@ -40,10 +40,10 @@ Relationships between the models:
 - 1-to-many relationship between PricingRelationship and Result: done
 - 1-to-many relationship between PricingRelationship and LayerToModelfile: done
 
-- many-to-many relationship between Layer and ModelFile in the association object LayerToModelfile
+- many-to-many relationship between Layer and ModelFile in the association object LayerToModelfile: done
 
 - 1-to-many relationhip between Result and ResultYearLoss: done
-- 1-to-many relationship between LayerToModelfile and ResultYearLoss
+- 1-to-many relationship between LayerToModelfile and ResultYearLoss: done
 
 
 Resources:

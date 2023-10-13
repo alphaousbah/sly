@@ -18,8 +18,7 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -43,8 +42,8 @@ def layout(analysis_id):
                             'background': '#f5f8fa',
                         }
                     ),
-                    get_button_outline(page_id + 'btn-save', 'Save Layers'),
-                    get_button_outline(page_id + 'btn-delete', 'Delete Layers'),
+                    get_button(page_id + 'btn-save', 'Save Layers'),
+                    get_button(page_id + 'btn-delete', 'Delete Layers'),
                 ])
             ]),
             dbc.Row([
@@ -74,12 +73,12 @@ for i in [1, 2, 3, 4, 5]:
     @callback(
         Output(page_id + 'div-table-layers', 'children', allow_duplicate=True),
         Input(page_id + f'btn-create-{i}', 'n_clicks'),
-        State(page_id + 'location', 'pathname'),
+        State(page_id + 'store', 'data'),
         State(page_id + f'btn-create-{i}', 'children'),
         config_prevent_initial_callbacks=True
     )
-    def create_layers(n_clicks, pathname, n_layers):  # n_layers = children property of btn-create
-        analysis_id = str(pathname).split('/')[-1]
+    def create_layers(n_clicks, data, n_layers):  # n_layers = children property of btn-create
+        analysis_id = data['analysis_id']
         analysis = db.session.get(Analysis, analysis_id)
         n_layers = int(n_layers[0])
 
@@ -102,14 +101,14 @@ for i in [1, 2, 3, 4, 5]:
     Output(page_id + 'alert-layers-deleted', 'is_open'),
     Input(page_id + 'btn-delete', 'n_clicks'),
     State(page_id + 'table-layers', 'selected_row_ids'),
-    State(page_id + 'location', 'pathname'),
+    State(page_id + 'store', 'data'),
 )
-def delete_layers(n_clicks, selected_row_ids, pathname):
+def delete_layers(n_clicks, selected_row_ids, data):
     if n_clicks is None or selected_row_ids is None:
         raise PreventUpdate
 
     # Identify and get the analysis
-    analysis_id = str(pathname).split('/')[-1]
+    analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
 
     # Delete the selected layers

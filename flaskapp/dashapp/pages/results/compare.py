@@ -10,7 +10,7 @@ import pandas as pd
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
-dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=1)
+dash.register_page(__name__, path_template=f'/{directory}/{page}/<analysis_id>', order=3)
 page_id = get_page_id(__name__)
 
 
@@ -18,8 +18,7 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     return html.Div([
-        dcc.Location(id=page_id + 'location'),
-        dcc.Store(id=page_id + 'store'),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
