@@ -17,7 +17,7 @@ The models include:
 - RiskProfile: Represents individual risk profiles (not used for SL pricing).
 - ModelFile: Represents a loss model associated with an analysis.
 - ModelYearLoss: Represents individual year loss records.
-- Result: Represents analysis results.
+- ResultFile: Represents analysis results.
 - PricingRelationship: Represents pricing relationships between layers and model files in results.
 - ResultYearLoss: Represents individual year loss records in analysis results.
 
@@ -30,19 +30,19 @@ Relationships between the models:
 - 1-to-many relationship between Analysis and RiskProfileFile: done
 - 1-to-many relationship between Analysis and ModelFile: done
 - 1-to-many relationship between Analysis and PricingRelationship: done
-- 1-to-many relationship between Analysis and Result: done
+- 1-to-many relationship between Analysis and ResultFile: done
 
 - 1-to-many relationship between HistoLossFile and HistoLoss: done
 - 1-to-many relationship between PremiumFile and Premium: done
 - 1-to-many relationship between RiskProfileFile and RiskProfile: done
 - 1-to-many relationship between ModelFile and ModelYearLoss: done
 
-- 1-to-many relationship between PricingRelationship and Result: done
+- 1-to-many relationship between PricingRelationship and ResultFile: done
 - 1-to-many relationship between PricingRelationship and LayerToModelfile: done
 
 - many-to-many relationship between Layer and ModelFile in the association object LayerToModelfile: done
 
-- 1-to-many relationhip between Result and ResultYearLoss: done
+- 1-to-many relationhip between ResultFile and ResultYearLoss: done
 - 1-to-many relationship between LayerToModelfile and ResultYearLoss: done
 
 
@@ -68,14 +68,14 @@ class Analysis(db.Model):
     quote = Column(Integer)
     client = Column(String(50))
 
-    # Define the 1-to-many relationship between Analysis and Layer, HistoLossFile, PremiumFile, RiskProfileFile, ModelFile, PricingRelationship, Result
+    # Define the 1-to-many relationship between Analysis and Layer, HistoLossFile, PremiumFile, RiskProfileFile, ModelFile, PricingRelationship, ResultFile
     layers = relationship('Layer', back_populates='analysis', cascade='all, delete-orphan')
     histolossfiles = relationship('HistoLossFile', back_populates='analysis', cascade='all, delete-orphan')
     premiumfiles = relationship('PremiumFile', back_populates='analysis', cascade='all, delete-orphan')
     riskprofilefiles = relationship('RiskProfileFile', back_populates='analysis', cascade='all, delete-orphan')
     modelfiles = relationship('ModelFile', back_populates='analysis', cascade='all, delete-orphan')
     pricingrelationships = relationship('PricingRelationship', back_populates='analysis', cascade='all, delete-orphan')
-    results = relationship('Result', back_populates='analysis', cascade='all, delete-orphan')
+    resultfiles = relationship('ResultFile', back_populates='analysis', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<{self.__tablename__.capitalize()} {self.id} {self.name}>'
@@ -222,7 +222,7 @@ class ModelYearLoss(db.Model):
 
     # Define the specific columns
     year = Column(Integer)
-    amount = Column(Integer)
+    amount = Column(Float)  # For a SL, the amount is a loss ratio, that is a floating point number
 
     # Define the 1-to-many relationship between ModelFile and ModelYearLoss
     modelfile_id = Column(Integer, ForeignKey(ModelFile.id))
@@ -241,8 +241,8 @@ class PricingRelationship(db.Model):
     analysis_id = Column(Integer, ForeignKey(Analysis.id))
     analysis = relationship('Analysis', back_populates='pricingrelationships')
 
-    # Define the 1-to-many relationship between PricingRelationship and Result
-    results = relationship('Result', back_populates='pricingrelationship', cascade='all, delete-orphan')
+    # Define the 1-to-many relationship between PricingRelationship and ResultFile
+    resultfiles = relationship('ResultFile', back_populates='pricingrelationship', cascade='all, delete-orphan')
 
     # Define the 1-to-many relationship between PricingRelationship and LayerToModelfile
     layertomodelfiles = relationship('LayerToModelfile', back_populates='pricingrelationship',
@@ -272,21 +272,21 @@ class LayerToModelfile(db.Model):
         return f'<{self.__tablename__.capitalize()} {self.id} {self.name}>'
 
 
-class Result(db.Model):
-    __tablename__ = 'result'
+class ResultFile(db.Model):
+    __tablename__ = 'resultfile'
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
 
-    # Define the 1-to-many relationship between Analysis and Result
+    # Define the 1-to-many relationship between Analysis and ResultFile
     analysis_id = Column(Integer, ForeignKey(Analysis.id))
-    analysis = relationship('Analysis', back_populates='results')
+    analysis = relationship('Analysis', back_populates='resultfiles')
 
-    # Define the 1-to-many relationship between PricingRelationship and Result
+    # Define the 1-to-many relationship between PricingRelationship and ResultFile
     pricingrelationship_id = Column(Integer, ForeignKey(PricingRelationship.id))
-    pricingrelationship = relationship('PricingRelationship', back_populates='results')
+    pricingrelationship = relationship('PricingRelationship', back_populates='resultfiles')
 
-    # Define the 1-to-many relationhip between Result and ResultYearLoss
-    resultyearlosses = relationship('ResultYearLoss', back_populates='result', cascade='all, delete-orphan')
+    # Define the 1-to-many relationhip between ResultFile and ResultYearLoss
+    resultyearlosses = relationship('ResultYearLoss', back_populates='resultfile', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<{self.__tablename__.capitalize()} {self.id} {self.name}>'
@@ -303,9 +303,9 @@ class ResultYearLoss(db.Model):
     recovery_amount = Column(Integer)
     net_amount = Column(Integer)
 
-    # Define the 1-to-many relationhip between Result and ResultYearLoss
-    result_id = Column(Integer, ForeignKey(Result.id))
-    result = relationship('Result', back_populates='resultyearlosses')
+    # Define the 1-to-many relationhip between ResultFile and ResultYearLoss
+    resultfile_id = Column(Integer, ForeignKey(ResultFile.id))
+    resultfile = relationship('ResultFile', back_populates='resultyearlosses')
 
     # Define the 1-to-many relationship between LayerToModelfile and ResultYearLoss
     layertomodelfile_id = Column(Integer, ForeignKey(LayerToModelfile.id))

@@ -27,6 +27,8 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     get_button(page_id + 'btn-process', 'Process'),
+                    # Todo: Create the delete function
+                    get_button(page_id + 'btn-delete', 'Delete'),
                     html.Div(
                         get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships),
                         id=page_id + 'div-table-relationships'
@@ -66,16 +68,50 @@ def save_result(n_clicks, data, selected_row_ids):
 
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
+    is_open = False
 
     for pricingrelationship_id in selected_row_ids:
-        result = Result(
-            name=db.session.get(PricingRelationship, pricingrelationship_id).name,
-            analysis_id=analysis_id,
-            pricingrelationship_id=pricingrelationship_id
-        )
-        db.session.add(result)
-        db.session.commit()
+
+        # Check if the pricing relationships has already been processed
+        # If not, save the result file and the result year losses
+        check = db.session.query(ResultFile). \
+            filter_by(analysis_id=analysis_id, pricingrelationship_id=pricingrelationship_id).first()
+
+        if not check:
+            # Save the result file
+            resultfile = ResultFile(
+                name=db.session.get(PricingRelationship, pricingrelationship_id).name,
+                analysis_id=analysis_id,
+                pricingrelationship_id=pricingrelationship_id
+            )
+            db.session.add(resultfile)
+            db.session.commit()
+
+            # Save the result year losses
+            for layertomodelfile in resultfile.pricingrelationship.layertomodelfiles:
+                layer = layertomodelfile.layer
+                modelfile = layertomodelfile.modelfile
+
+                for modelyearloss in modelfile.modelyearlosses:
+                    resultyearloss = ResultYearLoss(
+                        name=modelyearloss.name,
+                        resultfile_id=resultfile.id,
+                        layertomodelfile_id=layertomodelfile.id,
+                        year=modelyearloss.year,
+                        gross_amount=layer.premium * modelyearloss.amount
+                    )
+
+                    # Apply the SL cover to get the recovery and net amount
+                    # TODO: Correct the application of the SL cover = to the loss ratio !!!
+                    resultyearloss.recovery_amount = \
+                        get_sl_recovery(resultyearloss.gross_amount, layer.limit, layer.deductible)
+                    resultyearloss.net_amount = resultyearloss.gross_amount - resultyearloss.recovery_amount
+
+                    db.session.add(resultyearloss)
+                    db.session.commit()
+
+            is_open = True
 
     table_relationships = get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships)
 
-    return table_relationships, True
+    return table_relationships, is_open

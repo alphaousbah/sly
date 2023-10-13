@@ -16,9 +16,11 @@ page_id = get_page_id(__name__)
 
 def layout(analysis_id, result_id=None):
     analysis = db.session.get(Analysis, analysis_id)
+    # Todo: View last result if result_id == None
+    result = db.session.get(ResultFile, result_id)
 
     return html.Div([
-        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
+        dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id, 'result_id': result_id}),
         get_title(__name__, analysis.name),
         get_nav_middle(__name__, analysis.id),
         get_nav_bottom(__name__, analysis.id),
@@ -26,13 +28,28 @@ def layout(analysis_id, result_id=None):
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    f'Result' + result_id
+                    # html.Div('Results for ' + result.name, className='h5 mb-3'),
                 ]),
             ]),
             dbc.Row([
                 dbc.Col([
 
                 ]),
+                dbc.Col([
+
+                ]),
+            ]),
+            dbc.Row([
+                dbc.Col([
+
+                ]),
+            ]),
+            dbc.Row([
+                dbc.Col([
+
+                ]),
+            ]),
+            dbc.Row([
                 dbc.Col([
 
                 ]),

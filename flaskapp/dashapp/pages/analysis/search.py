@@ -12,7 +12,6 @@ page_id = get_page_id(__name__)
 
 
 def layout():
-    print(Analysis.query.all())
     return html.Div([
         html.H5('Analysis Search', className='title'),
         html.Div([

@@ -133,13 +133,16 @@ def save_relationships(n_clicks, data, id_, value, name):
     # Save the layer-to-modelfiles relationships
     for i in range(n_layers):
         layer_id = id_[i]['layer_id']
+        layer = db.session.get(Layer, layer_id)
 
         for modelfile_id in value[i]:
+            modelfile = db.session.get(ModelFile, modelfile_id)
+
             layertomodelfile = LayerToModelfile(
-                name=pricingrelationship.name,
+                name=f'{layer.name} - {modelfile.name}',
                 pricingrelationship_id=pricingrelationship.id,
-                layer_id=layer_id,
-                modelfile_id=modelfile_id
+                layer_id=layer.id,
+                modelfile_id=modelfile.id
             )
             db.session.add(layertomodelfile)
             db.session.commit()

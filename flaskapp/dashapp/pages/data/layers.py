@@ -83,10 +83,12 @@ for i in [1, 2, 3, 4, 5]:
         n_layers = int(n_layers[0])
 
         for i in range(1, n_layers + 1):
-            layer = Layer(analysis_id=analysis_id)
-            layer.premium = 0
-            layer.deductible = 0
-            layer.limit = 0
+            layer = Layer(
+                analysis_id=analysis_id,
+                premium=0,
+                deductible=0,
+                limit=0
+            )
             db.session.add(layer)
             db.session.commit()
 

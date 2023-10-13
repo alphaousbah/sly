@@ -50,6 +50,7 @@ def layout():
     ])
 
 
+# Todo: Create a link to the analysis after creating it
 @callback(
     Output(page_id + 'div-output', 'children'),
     Input(page_id + 'btn-create', 'n_clicks'),

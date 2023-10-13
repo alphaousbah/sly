@@ -368,9 +368,12 @@ def get_table_relationships(component_id, query):
         df = df_from_query(query)
 
         def f(row):
-            # If the pricing relationships has already been processed, create a link to the result
-            if db.session.query(Result).filter_by(analysis_id=row['analysis_id'],
-                                                  pricingrelationship_id=row['id']).first():
+            # Check if the pricing relationships has already been processed
+            # If so, create a link to the result
+            check = db.session.query(ResultFile). \
+                filter_by(analysis_id=row['analysis_id'], pricingrelationship_id=row['id']).first()
+
+            if check:
                 return '[View result](/dashapp/results/view/' + row['analysis_id'] + '?result_id=' + row['id'] + ')'
             else:
                 return 'Process to get result'
@@ -457,3 +460,7 @@ def get_lognorm_param(serie):
         'scale': scale,
         's': s
     }
+
+
+def get_sl_recovery(gross_amount, limit, deductible):
+    return min(limit, max(0, gross_amount - deductible))
