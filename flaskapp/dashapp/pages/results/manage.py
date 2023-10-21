@@ -102,7 +102,7 @@ def save_result(n_clicks, data, selected_row_ids):
                     )
 
                     # Apply the SL cover to get the recovery and net amount
-                    # TODO: Correct the application of the SL cover = to the loss ratio !!!
+                    # TODO: Correct the application of the SL cover = applu to the loss ratio !!!
                     resultyearloss.recovery_amount = \
                         get_sl_recovery(resultyearloss.gross_amount, layer.limit, layer.deductible)
                     resultyearloss.net_amount = resultyearloss.gross_amount - resultyearloss.recovery_amount
