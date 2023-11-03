@@ -90,6 +90,7 @@ class Layer(db.Model):
     premium = Column(Integer)
     deductible = Column(Integer)
     limit = Column(Integer)
+    display_order = Column(Integer)
 
     # Define the 1-to-many relationship between Analysis and Layer
     analysis_id = Column(Integer, ForeignKey(Analysis.id))

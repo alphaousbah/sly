@@ -107,7 +107,11 @@ def display_model_parameters(data):
         ], className='mb-3'),
         dbc.Row([
             dbc.Col([
-                html.Div(id=page_id + 'div-model'),
+                # Wrap the model div in a loading component
+                dcc.Loading(
+                    html.Div(id=page_id + 'div-model'),
+                    id=page_id + 'loading-model',
+                ),
             ]),
         ]),
     ]),
@@ -209,7 +213,11 @@ def display_model(value_year_min, value_year_max, data_store, data_table):
         ], className='mb-3'),
         dbc.Row([
             dbc.Col([
-                html.Div(id=page_id + 'div-modelyearloss'),
+                dcc.Loading(
+                    html.Div(id=page_id + 'div-modelyearloss'),
+                    id=page_id + 'loading-div-modelyearloss',
+                ),
+
             ]),
         ]),
     ]),
@@ -228,8 +236,6 @@ def display_model(value_year_min, value_year_max, data_store, data_table):
     config_prevent_initial_callbacks=True
 )
 def save_loss_model(n_clicks, data, value):
-    # TODO: Add a spinner component to the button
-    # https://dash-bootstrap-components.opensource.faculty.ai/docs/components/spinner/
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
 

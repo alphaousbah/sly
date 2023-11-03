@@ -2,11 +2,11 @@ import dash
 from dash import html, dcc, dash_table, callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_ag_grid as dag
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
 import pandas as pd
-from io import StringIO
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
@@ -16,6 +16,8 @@ page_id = get_page_id(__name__)
 
 def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
+    df = df_from_query(analysis.layers)
+    df = df.sort_values(['display_order', 'id'], ascending=[True, True])
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
@@ -44,25 +46,42 @@ def layout(analysis_id):
                     ),
                     get_button(page_id + 'btn-save', 'Save Layers'),
                     get_button(page_id + 'btn-delete', 'Delete Layers'),
-                ])
+                ], width=5),
+                dbc.Col([
+                    html.Div(id=page_id + 'div-layers-modified'),
+                ], width=7),
             ]),
             dbc.Row([
                 dbc.Col([
-                    html.Div(
-                        get_table_layers(page_id + 'table-layers', analysis.layers),
-                        id=page_id + 'div-table-layers',
-                        className='mb-2'
+                    dag.AgGrid(
+                        id=page_id + 'grid-layers',
+                        rowData=df.to_dict('records'),
+                        columnDefs=[
+                            {'field': 'id', 'hide': True},
+                            {
+                                'field': 'name',
+                                'checkboxSelection': True, 'headerCheckboxSelection': True,
+                                'rowDrag': True,
+                            },
+                            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}, },
+                            {'field': 'deductible', 'valueFormatter': {'function': '(params.value) + "%"'}, },
+                            {'field': 'limit', 'valueFormatter': {'function': '(params.value) + "%"'}, },
+                            {'field': 'analysis_id'},
+                            {'field': 'display_order'},
+                            # {'field': 'display_order', 'hide': True},
+                        ]
+                        ,
+                        getRowId='params.data.id',
+                        defaultColDef={
+                            'flex': True,
+                            'editable': True,
+                        },
+                        dashGridOptions={'rowSelection': 'multiple', 'rowDragManaged': True, 'rowDragMultiRow': True,
+                                         'animateRows': True},
+                        persistence=True,
+                        className='ag-theme-alpine custom mb-2',
                     ),
-                    html.Div([
-                        dbc.Alert(
-                            'The layers have been deleted',
-                            id=page_id + 'alert-layers-deleted',
-                            is_open=False,
-                            duration=4000
-                        ),
-                        html.Div(id=page_id + 'div-layers-modified'),
-                    ]),
-                ], width=6)
+                ], width=12)
             ]),
         ], className='div-standard')
     ])
@@ -71,7 +90,8 @@ def layout(analysis_id):
 # Callback that creates n layers with n defined by the click on the dropdown menu
 for i in [1, 2, 3, 4, 5]:
     @callback(
-        Output(page_id + 'div-table-layers', 'children', allow_duplicate=True),
+        Output(page_id + 'grid-layers', 'rowTransaction', allow_duplicate=True),
+        Output(page_id + 'div-layers-modified', 'children', allow_duplicate=True),
         Input(page_id + f'btn-create-{i}', 'n_clicks'),
         State(page_id + 'store', 'data'),
         State(page_id + f'btn-create-{i}', 'children'),
@@ -82,31 +102,60 @@ for i in [1, 2, 3, 4, 5]:
         analysis = db.session.get(Analysis, analysis_id)
         n_layers = int(n_layers[0])
 
-        for i in range(1, n_layers + 1):
+        # Initialize the grid transaction
+        newRows = []
+
+        for i in range(n_layers):
+            # Set the layers default parameters values
+            name = ''
+            premium = 0
+            deductible = 0
+            limit = 0
+            display_order = 999  # Set display_order to 999 so that the new layers are displayed in last position
+
             layer = Layer(
-                analysis_id=analysis_id,
-                premium=0,
-                deductible=0,
-                limit=0
+                name=name,
+                premium=premium,
+                deductible=deductible,
+                limit=limit,
+                display_order=display_order,
+                analysis_id=analysis_id
             )
             db.session.add(layer)
             db.session.commit()
 
-        # Update the layers table
-        table_layers = get_table_layers(page_id + 'table-layers', analysis.layers)
+            newRows.append(
+                {
+                    'id': layer.id,
+                    'name': layer.name,
+                    'premium': layer.premium,
+                    'deductible': layer.deductible,
+                    'limit': layer.limit,
+                    'display_order': layer.display_order,
+                    'analysis_id': analysis_id
+                }
+            )
 
-        return table_layers
+        alert = dbc.Alert(
+            'The layers have been modified. Save the changes with the Save button',
+            id=page_id + 'alert-modified',
+            color='danger',
+            className='text-center',
+        )
+
+        return {'add': newRows}, alert
 
 
 @callback(
-    Output(page_id + 'div-table-layers', 'children'),
-    Output(page_id + 'alert-layers-deleted', 'is_open'),
+    Output(page_id + 'grid-layers', 'rowTransaction'),
+    Output(page_id + 'div-layers-modified', 'children', allow_duplicate=True),
     Input(page_id + 'btn-delete', 'n_clicks'),
-    State(page_id + 'table-layers', 'selected_row_ids'),
+    State(page_id + 'grid-layers', 'selectedRows'),
     State(page_id + 'store', 'data'),
+    config_prevent_initial_callbacks=True
 )
-def delete_layers(n_clicks, selected_row_ids, data):
-    if n_clicks is None or selected_row_ids is None:
+def delete_layers(n_clicks, selectedRows, data):
+    if n_clicks is None or selectedRows is None:
         raise PreventUpdate
 
     # Identify and get the analysis
@@ -114,27 +163,34 @@ def delete_layers(n_clicks, selected_row_ids, data):
     analysis = db.session.get(Analysis, analysis_id)
 
     # Delete the selected layers
-    for layer_id in selected_row_ids:
+    for row in selectedRows:
+        layer_id = row['id']
         layer = db.session.get(Layer, layer_id)
         db.session.delete(layer)
         db.session.commit()
 
-    # Update the layers table
-    table_layers = get_table_layers(page_id + 'table-layers', analysis.layers)
+    alert = dbc.Alert(
+        'The layers have been deleted',
+        id=page_id + 'alert-deleted',
+        duration=3000,
+        className='text-center',
+    )
 
-    return table_layers, True
+    # Update the layers table
+    return {'remove': selectedRows}, alert
 
 
 @callback(
     Output(page_id + 'div-layers-modified', 'children', allow_duplicate=True),
-    Input(page_id + 'table-layers', 'data'),
+    Input(page_id + 'grid-layers', 'cellValueChanged'),
     config_prevent_initial_callbacks=True
 )
-def inform_layers_modified(data):
+def inform_layers_modified(cellValueChanged):
     alert = dbc.Alert(
         'The layers have been modified. Save the changes with the Save button',
-        id=page_id + 'alert-layers-modified',
+        id=page_id + 'alert-modified',
         color='danger',
+        className='text-center',
     )
     return alert
 
@@ -142,23 +198,24 @@ def inform_layers_modified(data):
 @callback(
     Output(page_id + 'div-layers-modified', 'children'),
     Input(page_id + 'btn-save', 'n_clicks'),
-    State(page_id + 'table-layers', 'data'),
+    State(page_id + 'grid-layers', 'virtualRowData'),  # Use virtualRowData instead of rowData to get the rows order
     config_prevent_initial_callbacks=True
 )
-def save_layers(n_clicks, data):
-    for row in data:
+def save_layers(n_clicks, virtualRowData):
+    for row in virtualRowData:
         layer = db.session.get(Layer, row['id'])
         layer.name = row['name']
         layer.premium = int(row['premium'])
         layer.deductible = int(row['deductible'])
         layer.limit = int(row['limit'])
+        layer.display_order = virtualRowData.index(row)
         db.session.commit()
 
     alert = dbc.Alert(
         'The changes have been saved',
-        id=page_id + 'alert-layers-modified',
+        id=page_id + 'alert-saved',
         color='success',
-        is_open=True,
-        duration=4000,
+        duration=3000,
+        className='text-center',
     )
     return alert

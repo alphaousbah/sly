@@ -293,7 +293,7 @@ def get_table_lossfiles(component_id, query):
             filter_action='native',
             sort_action='native',
             sort_mode='multi',
-            row_selectable='multi',
+            row_selectable='none',
             selected_rows=[],
             page_action='native',
             page_current=0,
