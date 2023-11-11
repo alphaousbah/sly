@@ -300,9 +300,9 @@ class ResultYearLoss(db.Model):
 
     # Define the specific columns
     year = Column(Integer)
-    gross_amount = Column(Integer)
-    recovery_amount = Column(Integer)
-    net_amount = Column(Integer)
+    grossloss = Column(Integer)  # Cedant's gross loss
+    recovery = Column(Integer)  # Recovery from the reinsurance treaty
+    netloss = Column(Integer)  # Cedant's net loss
 
     # Define the 1-to-many relationhip between ResultFile and ResultYearLoss
     resultfile_id = Column(Integer, ForeignKey(ResultFile.id))

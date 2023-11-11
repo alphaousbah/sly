@@ -135,7 +135,7 @@ def save_lossfile(n_clicks, data, value, vintage, name, is_open):
             loss_ratio=row['loss_ratio']
         )
         db.session.add(loss)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     # Update the loss files table after adding the new loss file
     table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)
@@ -179,7 +179,7 @@ def delete_lossfiles(n_clicks, data, selected_row_ids):
     for lossfile_id in selected_row_ids:
         lossfile = db.session.get(HistoLossFile, lossfile_id)
         db.session.delete(lossfile)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     # Update the loss files table
     table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)

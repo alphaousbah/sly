@@ -16,8 +16,14 @@ page_id = get_page_id(__name__)
 
 def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
-    df = df_from_query(analysis.layers)
-    df = df.sort_values(['display_order', 'id'], ascending=[True, True])
+
+    if analysis.layers:
+        df = df_from_query(analysis.layers)
+        df = df.sort_values(['display_order', 'id'], ascending=[True, True])
+    else:
+        # Create an empty pandas dataframe
+        # https://stackoverflow.com/questions/13784192/creating-an-empty-pandas-dataframe-and-then-filling-it
+        df = pd.DataFrame([])
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
@@ -167,7 +173,7 @@ def delete_layers(n_clicks, selectedRows, data):
         layer_id = row['id']
         layer = db.session.get(Layer, layer_id)
         db.session.delete(layer)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     alert = dbc.Alert(
         'The layers have been deleted',
@@ -183,6 +189,7 @@ def delete_layers(n_clicks, selectedRows, data):
 @callback(
     Output(page_id + 'div-layers-modified', 'children', allow_duplicate=True),
     Input(page_id + 'grid-layers', 'cellValueChanged'),
+    # Input(page_id + 'grid-layers', 'virtualRowData'),
     config_prevent_initial_callbacks=True
 )
 def inform_layers_modified(cellValueChanged):
@@ -209,7 +216,7 @@ def save_layers(n_clicks, virtualRowData):
         layer.deductible = int(row['deductible'])
         layer.limit = int(row['limit'])
         layer.display_order = virtualRowData.index(row)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     alert = dbc.Alert(
         'The changes have been saved',

@@ -191,6 +191,17 @@ def display_model(value_year_min, value_year_max, data_store, data_table):
         ]),
         dbc.Row([
             dbc.Col([
+                dmc.TextInput(
+                    id=page_id + 'input-name-modelfile',
+                    placeholder='Enter the name of the loss model',
+                ),
+            ], width=5),
+            dbc.Col([
+                get_button(page_id + 'btn-save-model', 'Save'),
+            ], width=1),
+        ], className='mb-3'),
+        dbc.Row([
+            dbc.Col([
                 dbc.Alert(
                     'The loss model has been saved as a YLT',
                     id=page_id + 'alert-save',
@@ -198,18 +209,7 @@ def display_model(value_year_min, value_year_max, data_store, data_table):
                     is_open=False,
                     duration=4000,
                 ),
-            ]),
-        ], className='mb-3'),
-        dbc.Row([
-            dbc.Col([
-                dmc.TextInput(
-                    id=page_id + 'input-name-modelfile',
-                    placeholder='Enter the name of the loss model',
-                ),
-            ]),
-            dbc.Col([
-                get_button(page_id + 'btn-save-model', 'Save'),
-            ]),
+            ], width=6),
         ], className='mb-3'),
         dbc.Row([
             dbc.Col([
@@ -252,10 +252,9 @@ def save_loss_model(n_clicks, data, value):
     scale = data['scale']
     fit_lognorm = lognorm(s=s, scale=scale)
 
-    # TODO: Create a global variable giving the size of the YLTs
-    size = 1000
-    years = range(1, size + 1)
-    loss_ratios = fit_lognorm.rvs(size=size).tolist()
+    NBYEARS = 10000  # TODO: Create a global constant giving the number of years
+    years = range(1, NBYEARS + 1)
+    loss_ratios = fit_lognorm.rvs(size=NBYEARS).tolist()
 
     df = pd.DataFrame({'year': years, 'amount': loss_ratios})
 
@@ -267,7 +266,7 @@ def save_loss_model(n_clicks, data, value):
             modelfile_id=modelfile.id
         )
         db.session.add(yearloss)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     table_yearlosses = dash_table.DataTable(
         data=df.to_dict('records'),

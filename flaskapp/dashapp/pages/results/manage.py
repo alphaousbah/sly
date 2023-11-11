@@ -7,6 +7,7 @@ from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
 import pandas as pd
+import time
 
 directory = get_directory(__name__)['directory']
 page = get_directory(__name__)['page']
@@ -27,11 +28,13 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     get_button(page_id + 'btn-process', 'Process'),
-                    # Todo: Create the delete function
                     get_button(page_id + 'btn-delete', 'Delete'),
-                    html.Div(
-                        get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships),
-                        id=page_id + 'div-table-relationships'
+                    dcc.Loading(
+                        html.Div(
+                            get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships),
+                            id=page_id + 'div-table-relationships'
+                        ),
+                        id=page_id + 'loading-div-table-relationships',
                     ),
                 ], width=5, className='mb-2'),
             ]),
@@ -62,18 +65,18 @@ def layout(analysis_id):
     State(page_id + 'store', 'data'),
     State(page_id + 'table-relationships', 'selected_row_ids'),
 )
-def save_result(n_clicks, data, selected_row_ids):
+def process_result(n_clicks, data, selected_row_ids):
     if n_clicks is None or selected_row_ids is None:
         raise PreventUpdate
 
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
     is_open = False
+    start = time.perf_counter()  # TODO: Timer
 
     for pricingrelationship_id in selected_row_ids:
-
         # Check if the pricing relationships has already been processed
-        # If not, save the result file and the result year losses
+        # If not, process and save the result file and the result year losses
         check = db.session.query(ResultFile). \
             filter_by(analysis_id=analysis_id, pricingrelationship_id=pricingrelationship_id).first()
 
@@ -98,20 +101,24 @@ def save_result(n_clicks, data, selected_row_ids):
                         resultfile_id=resultfile.id,
                         layertomodelfile_id=layertomodelfile.id,
                         year=modelyearloss.year,
-                        gross_amount=layer.premium * modelyearloss.amount
+                        # For the SL, the amount contains the simulated loss ratio
+                        grossloss=layer.premium * modelyearloss.amount
                     )
 
                     # Apply the SL cover to get the recovery and net amount
-                    # TODO: Correct the application of the SL cover = applu to the loss ratio !!!
-                    resultyearloss.recovery_amount = \
-                        get_sl_recovery(resultyearloss.gross_amount, layer.limit, layer.deductible)
-                    resultyearloss.net_amount = resultyearloss.gross_amount - resultyearloss.recovery_amount
+                    resultyearloss.recovery = get_sl_recovery(
+                        resultyearloss.grossloss,
+                        layer.premium,
+                        layer.limit,
+                        layer.deductible,
+                    )
+                    resultyearloss.netloss = resultyearloss.grossloss - resultyearloss.recovery
 
                     db.session.add(resultyearloss)
-                    db.session.commit()
+                db.session.commit()  # Commit after the loop for DB performance
 
             is_open = True
 
     table_relationships = get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships)
-
+    print(f'Elapsed time: {time.perf_counter() - start}')  # TODO: Timer
     return table_relationships, is_open

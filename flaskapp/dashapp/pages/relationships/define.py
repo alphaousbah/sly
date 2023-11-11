@@ -145,7 +145,7 @@ def save_relationships(n_clicks, data, id_, value, name):
                 modelfile_id=modelfile.id
             )
             db.session.add(layertomodelfile)
-            db.session.commit()
+        db.session.commit()  # Commit after the loop for DB performance
 
     alert = dbc.Alert(
         'The relationships have been saved',

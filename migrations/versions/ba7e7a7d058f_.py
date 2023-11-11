@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 66d26f410193
+Revision ID: ba7e7a7d058f
 Revises: 
-Create Date: 2023-10-21 21:03:10.115052
+Create Date: 2023-11-10 15:28:37.069052
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '66d26f410193'
+revision = 'ba7e7a7d058f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -39,6 +39,7 @@ def upgrade():
     sa.Column('premium', sa.Integer(), nullable=True),
     sa.Column('deductible', sa.Integer(), nullable=True),
     sa.Column('limit', sa.Integer(), nullable=True),
+    sa.Column('display_order', sa.Integer(), nullable=True),
     sa.Column('analysis_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['analysis_id'], ['analysis.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -131,9 +132,9 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=True),
     sa.Column('year', sa.Integer(), nullable=True),
-    sa.Column('gross_amount', sa.Integer(), nullable=True),
-    sa.Column('recovery_amount', sa.Integer(), nullable=True),
-    sa.Column('net_amount', sa.Integer(), nullable=True),
+    sa.Column('grossloss', sa.Integer(), nullable=True),
+    sa.Column('recovery', sa.Integer(), nullable=True),
+    sa.Column('netloss', sa.Integer(), nullable=True),
     sa.Column('resultfile_id', sa.Integer(), nullable=True),
     sa.Column('layertomodelfile_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['layertomodelfile_id'], ['layertomodelfile.id'], ),

@@ -8,16 +8,19 @@ from flaskapp.extensions import db
 from flaskapp.models import *
 import pandas as pd
 
-
 dash.register_page(__name__, path='/')
 page_id = get_page_id(__name__)
 
 
 def layout():
-    df = df_from_query(Analysis.query.all()).sort_values(by='id', ascending=False)
 
-    for col in ['quote', 'name']:
-        df[col] = '[' + df[col] + '](/dashapp/analysis/view/' + df['id'].astype(str) + ')'
+    if Analysis.query.all():
+        df = df_from_query(Analysis.query.all()).sort_values(by='id', ascending=False)
+
+        for col in ['quote', 'name']:
+            df[col] = '[' + df[col] + '](/dashapp/analysis/view/' + df['id'].astype(str) + ')'
+    else:
+        df = pd.DataFrame([])
 
     return html.Div([
         html.H5('Analysis Search', className='title'),
@@ -69,7 +72,7 @@ def delete_analysis(n_clicks, selectedRows):
         analysis_id = row['id']
         analysis = db.session.get(Analysis, analysis_id)
         db.session.delete(analysis)
-        db.session.commit()
+    db.session.commit()  # Commit after the loop for DB performance
 
     # Update the analyses grid
     return {'remove': selectedRows}
