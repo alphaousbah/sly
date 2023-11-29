@@ -40,7 +40,8 @@ def layout(analysis_id, resultfile_id=None):
         resultfile = db.session.get(ResultFile, resultfile_id)
     else:
         # Get the last result file in none was provided via the url's query string
-        resultfile = db.session.query(ResultFile).order_by(ResultFile.id.desc()).first()
+        resultfile = db.session.query(ResultFile).filter_by(analysis_id=analysis.id).order_by(
+            ResultFile.id.desc()).first()
 
     if resultfile:
         # Set the title of the page
@@ -125,7 +126,8 @@ def layout(analysis_id, resultfile_id=None):
 
                 if len(recoveries_modelfile) > 0:
                     recoveries_modelfile['recovery'] = recoveries_modelfile['recovery'].astype(int)
-                    df_summary.at[f'PP {modelfile.name}', layer.name] = round(recoveries_modelfile['recovery'].mean())
+                    df_summary.at[f'PP {modelfile.name}', layer.name] \
+                        = f'{round(recoveries_modelfile["recovery"].mean()):,.0f}'
 
     else:
         # Set the title of the page
@@ -152,7 +154,7 @@ def layout(analysis_id, resultfile_id=None):
                         columnDefs=[{'field': col} for col in df_oep.columns if col != 'proba'],
                         columnSize='responsiveSizeToFit',
                         dashGridOptions={
-                            'rowHeight': 35,
+                            'domLayout': 'autoHeight',
                             'pinnedBottomRowData': df_summary.to_dict('records'),
                         },
                         style={'height': 500},

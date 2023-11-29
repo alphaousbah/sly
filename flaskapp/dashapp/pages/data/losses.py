@@ -82,7 +82,10 @@ def layout(analysis_id):
                             getRowId='params.data.id',
                             defaultColDef={'flex': True, 'sortable': True, 'filter': True, 'floatingFilter': True},
                             columnSize='responsiveSizeToFit',
-                            dashGridOptions={'rowSelection': 'multiple'},
+                            dashGridOptions={
+                                'domLayout': 'autoHeight',
+                                'rowSelection': 'multiple',
+                            },
                             className='ag-theme-alpine custom',
                         ),
                     ),
@@ -175,6 +178,9 @@ def display_losses(cellClicked):
             {'field': 'loss_ratio', 'valueFormatter': {'function': 'd3.format(".1%")(params.value)'}},
         ],
         columnSize='responsiveSizeToFit',
+        dashGridOptions={
+            'domLayout': 'autoHeight',
+        }
     )
 
     return grid_losses

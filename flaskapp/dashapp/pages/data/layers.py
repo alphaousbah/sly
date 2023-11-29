@@ -82,9 +82,11 @@ def layout(analysis_id):
                             'editable': True,
                         },
                         columnSize='responsiveSizeToFit',
-                        dashGridOptions={'rowSelection': 'multiple', 'rowDragManaged': True, 'rowDragMultiRow': True,
-                                         'animateRows': True},
-                        persistence=True,
+                        dashGridOptions={
+                            'domLayout': 'autoHeight',
+                            'rowSelection': 'multiple',
+                            'rowDragManaged': True, 'rowDragMultiRow': True, 'animateRows': True
+                        },
                         className='ag-theme-alpine custom mb-2',
                     ),
                 ], width=12)

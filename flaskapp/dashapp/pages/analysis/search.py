@@ -48,7 +48,10 @@ def layout():
                             'flex': True, 'sortable': True, 'filter': True, 'floatingFilter': True,
                         },
                         columnSize='responsiveSizeToFit',
-                        dashGridOptions={'rowSelection': 'multiple'},
+                        dashGridOptions={
+                            'domLayout': 'autoHeight',
+                            'rowSelection': 'multiple',
+                        },
                         className='ag-theme-alpine custom',
                     ),
                 ], width=6),

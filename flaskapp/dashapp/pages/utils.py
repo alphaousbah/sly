@@ -216,49 +216,19 @@ def df_from_sqla(query):
     return pd.DataFrame(list_from_query)
 
 
-def get_table_relationships(component_id, query):
-    if query:
-        df = df_from_sqla(query)
+def get_link_results(row):
+    # Check if the pricing relationships has already been processed,
+    # that is if a corresponding result file exists
+    # If so, create a link to the result
+    resultfile = db.session.query(ResultFile) \
+        .filter_by(analysis_id=row['analysis_id'], pricingrelationship_id=row['id']).first()
 
-        def f(row):
-            # Check if the pricing relationships has already been processed,
-            # that is if a corresponding result file exists
-            # If so, create a link to the result
-            resultfile = db.session.query(ResultFile). \
-                filter_by(analysis_id=row['analysis_id'], pricingrelationship_id=row['id']).first()
-
-            if resultfile:
-                # Link to the result
-                return '[View result]' \
-                    + '(/dashapp/results/view/' + row['analysis_id'] + '?resultfile_id=' + str(resultfile.id) + ')'
-            else:
-                return 'Process to get result'
-
-        df['result'] = df.apply(f, axis=1)
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize(), 'presentation': 'markdown'} for col in df.columns],
-            markdown_options={'link_target': '_self'},
-            hidden_columns=['id', 'analysis_id'],
-            sort_by=[{'column_id': 'id', 'direction': 'asc'}],
-            editable=False,
-            filter_action='native',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable='multi',
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=10,
-            style_data_conditional=[
-                # Disable highlighting active cell
-                {'if': {'state': 'selected'}, 'backgroundColor': 'inherit !important', 'border': 'inherit !important'},
-            ]
-        )
-
-    return None
+    if resultfile:
+        # Link to the result
+        return '[View results]' \
+            + '(/dashapp/results/view/' + row['analysis_id'] + '?resultfile_id=' + str(resultfile.id) + ')'
+    else:
+        return 'Process to get results'
 
 
 def get_button(component_id, name):

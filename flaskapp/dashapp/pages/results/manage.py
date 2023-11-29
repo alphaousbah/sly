@@ -1,8 +1,8 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State, ALL
+from dash import html, dcc, dash_table, callback, Output, Input, State, ALL, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import dash_mantine_components as dmc
+import dash_ag_grid as dag
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
@@ -17,6 +17,8 @@ page_id = get_page_id(__name__)
 
 def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
+    df = df_from_sqla(analysis.pricingrelationships)
+    df['results'] = df.apply(get_link_results, axis=1)
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
@@ -31,8 +33,21 @@ def layout(analysis_id):
                     get_button(page_id + 'btn-delete', 'Delete'),
                     dcc.Loading(
                         html.Div(
-                            get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships),
-                            id=page_id + 'div-table-relationships'
+                            dag.AgGrid(
+                                id=page_id + 'grid-relationships',
+                                rowData=df.to_dict('records'),
+                                columnDefs=[
+                                    {'field': 'id', 'hide': True},
+                                    {'field': 'name', 'checkboxSelection': True},
+                                    {'field': 'results', 'cellRenderer': 'markdown'},
+                                ],
+                                getRowId='params.data.id',
+                                columnSize='responsiveSizeToFit',
+                                dashGridOptions={
+                                    'domLayout': 'autoHeight',
+                                    'rowSelection': 'multiple',
+                                },
+                            ),
                         ),
                         id=page_id + 'loading-div-table-relationships',
                     ),
@@ -59,24 +74,25 @@ def layout(analysis_id):
 
 
 @callback(
-    Output(page_id + 'div-table-relationships', 'children'),
+    Output(page_id + 'grid-relationships', 'rowData'),
     Output(page_id + 'alert_save', 'is_open'),
     Input(page_id + 'btn-process', 'n_clicks'),
     State(page_id + 'store', 'data'),
-    State(page_id + 'table-relationships', 'selected_row_ids'),
+    State(page_id + 'grid-relationships', 'selectedRows'),
 )
-def process_result(n_clicks, data, selected_row_ids):
-    if n_clicks is None or selected_row_ids is None:
-        raise PreventUpdate
+def process_result(n_clicks, data, selectedRows):
+    if n_clicks is None or selectedRows is None:
+        return no_update
 
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
     is_open = False
     start = time.perf_counter()  # TODO: Timer
 
-    for pricingrelationship_id in selected_row_ids:
+    for row in selectedRows:
         # Check if the pricing relationships has already been processed
         # If not, process and save the result file and the result year losses
+        pricingrelationship_id = row['id']
         check = db.session.query(ResultFile). \
             filter_by(analysis_id=analysis_id, pricingrelationship_id=pricingrelationship_id).first()
 
@@ -119,6 +135,9 @@ def process_result(n_clicks, data, selected_row_ids):
 
             is_open = True
 
-    table_relationships = get_table_relationships(page_id + 'table-relationships', analysis.pricingrelationships)
+    df = df_from_sqla(analysis.pricingrelationships)
+    df['results'] = df.apply(get_link_results, axis=1)
+    rowData = df.to_dict('records')
+
     print(f'Elapsed time: {time.perf_counter() - start}')  # TODO: Timer
-    return table_relationships, is_open
+    return rowData, is_open
