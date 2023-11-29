@@ -11,6 +11,7 @@ page_id = get_page_id(__name__)
 
 def layout():
     return html.Div([
+        dcc.Location(id=page_id + 'location'),
         html.H5('Create Analysis', className='title'),
         html.Div([
             dbc.Row([
@@ -39,7 +40,6 @@ def layout():
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Button('Create', id=page_id + 'btn-create', n_clicks=0, className='button'),
-                                    html.Div(id=page_id + 'div-output'),
                                 ]),
                             ]),
                         ]),
@@ -50,9 +50,8 @@ def layout():
     ])
 
 
-# Todo: Create a link to the analysis after creating it
 @callback(
-    Output(page_id + 'div-output', 'children'),
+    Output(page_id + 'location', 'pathname'),
     Input(page_id + 'btn-create', 'n_clicks'),
     State(page_id + 'input-quote', 'value'),
     State(page_id + 'input-name', 'value'),
@@ -63,4 +62,4 @@ def create_analysis(n_clicks, quote, name, client):
     analysis = Analysis(quote=quote, name=name, client=client)
     db.session.add(analysis)
     db.session.commit()
-    return f'The analysis {name} for {client} has been created'
+    return f'/dashapp/analysis/view/{analysis.id}'

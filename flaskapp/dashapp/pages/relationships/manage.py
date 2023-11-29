@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State, ALL
+from dash import html, dcc, callback, Output, Input, State, ALL
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc

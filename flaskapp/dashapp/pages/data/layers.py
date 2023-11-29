@@ -18,7 +18,7 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     if analysis.layers:
-        df = df_from_query(analysis.layers)
+        df = df_from_sqla(analysis.layers)
         df = df.sort_values(['display_order', 'id'], ascending=[True, True])
     else:
         # Create an empty pandas dataframe
@@ -69,19 +69,19 @@ def layout(analysis_id):
                                 'checkboxSelection': True, 'headerCheckboxSelection': True,
                                 'rowDrag': True,
                             },
-                            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}, },
-                            {'field': 'deductible', 'valueFormatter': {'function': '(params.value) + "%"'}, },
-                            {'field': 'limit', 'valueFormatter': {'function': '(params.value) + "%"'}, },
+                            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
+                            {'field': 'deductible', 'valueFormatter': {'function': '(params.value) + "%"'}},
+                            {'field': 'limit', 'valueFormatter': {'function': '(params.value) + "%"'}},
                             {'field': 'analysis_id'},
                             {'field': 'display_order'},
                             # {'field': 'display_order', 'hide': True},
-                        ]
-                        ,
+                        ],
                         getRowId='params.data.id',
                         defaultColDef={
                             'flex': True,
                             'editable': True,
                         },
+                        columnSize='responsiveSizeToFit',
                         dashGridOptions={'rowSelection': 'multiple', 'rowDragManaged': True, 'rowDragMultiRow': True,
                                          'animateRows': True},
                         persistence=True,

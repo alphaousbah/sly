@@ -208,7 +208,7 @@ def get_page_id(module):
     return page_id
 
 
-def df_from_query(query):
+def df_from_sqla(query):
     # https://stackoverflow.com/questions/1958219/how-to-convert-sqlalchemy-row-object-to-a-python-dict
     list_from_query = \
         [{col.name: str(getattr(record, col.name)) for col in record.__table__.columns} for record in query]
@@ -216,156 +216,9 @@ def df_from_query(query):
     return pd.DataFrame(list_from_query)
 
 
-def get_table_analyses(component_id, query):
-    if query:
-        df = df_from_query(query)
-
-        # Create Markdown links to open an analysis from the table
-        for col in ['quote', 'name']:
-            df[col] = '[' + df[col] + '](/dashapp/analysis/view/' + df['id'].astype(str) + ')'
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize(), 'presentation': 'markdown'} for col in df.columns],
-            hidden_columns=['id'],
-            sort_by=[{'column_id': 'id', 'direction': 'asc'}],
-            editable=False,
-            filter_action='native',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable='multi',
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=10,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
-            style_data_conditional=[
-                # Disable highlighting active cell
-                {'if': {'state': 'selected'}, 'backgroundColor': 'inherit !important', 'border': 'inherit !important'},
-            ]
-        )
-
-    return None
-
-
-def get_table_layers(component_id, query):
-    if query:
-        df = df_from_query(query)
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'analysis_id'],
-            sort_by=[{'column_id': 'id', 'direction': 'asc'}],
-            editable=True,
-            filter_action='none',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable='multi',
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=5,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
-            style_data_conditional=[],
-        )
-
-    return None
-
-
-def get_table_lossfiles(component_id, query):
-    if query:
-        df = df_from_query(query)
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'analysis_id'],
-            sort_by=[{'column_id': 'id', 'direction': 'asc'}],
-            editable=False,
-            filter_action='native',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable='none',
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=5,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
-            style_data_conditional=[],
-        )
-
-    return None
-
-
-def get_table_losses(component_id, query):
-    if query:
-        df = df_from_query(query)
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'lossfile_id', 'name'],
-            sort_by=[{'column_id': 'year', 'direction': 'asc'}],
-            editable=False,
-            filter_action='none',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable=False,
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=20,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
-            style_data_conditional=[],
-        )
-
-    return None
-
-
-def get_table_modelfiles(component_id, query):
-    if query:
-        df = df_from_query(query)
-
-        return dash_table.DataTable(
-            id=component_id,
-            data=df.to_dict('records'),
-            columns=[{'id': col, 'name': str(col).capitalize()} for col in df.columns],
-            hidden_columns=['id', 'analysis_id'],
-            sort_by=[{'column_id': 'year', 'direction': 'asc'}],
-            editable=False,
-            filter_action='none',
-            sort_action='native',
-            sort_mode='multi',
-            row_selectable=True,
-            selected_rows=[],
-            page_action='native',
-            page_current=0,
-            page_size=10,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
-            style_data_conditional=[],
-        )
-
-    return None
-
-
 def get_table_relationships(component_id, query):
     if query:
-        df = df_from_query(query)
+        df = df_from_sqla(query)
 
         def f(row):
             # Check if the pricing relationships has already been processed,
@@ -399,9 +252,6 @@ def get_table_relationships(component_id, query):
             page_action='native',
             page_current=0,
             page_size=10,
-            css=get_datatable_css(),
-            style_header=get_datatable_style_header(),
-            style_cell=get_datatable_style_cell(),
             style_data_conditional=[
                 # Disable highlighting active cell
                 {'if': {'state': 'selected'}, 'backgroundColor': 'inherit !important', 'border': 'inherit !important'},
@@ -409,33 +259,6 @@ def get_table_relationships(component_id, query):
         )
 
     return None
-
-
-def get_datatable_style_header():
-    return {
-        'backgroundColor': 'whitesmoke',
-        'padding': '0.5rem'
-    }
-
-
-def get_datatable_css():
-    return [
-        {'selector': 'p', 'rule': 'margin: 0'},
-        {'selector': '.show-hide', 'rule': 'display: none'}
-    ]
-
-
-def get_datatable_style_cell():
-    return {
-        'fontFamily': '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,'
-                      '"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol",'
-                      '"Noto Color Emoji"',
-        'fontSize': '13px',
-        'lineHeight': '1.5',
-        'textAlign': 'left',
-        'padding': '0.5rem',
-        'border': '1px solid #dee2e6',
-    }
 
 
 def get_button(component_id, name):

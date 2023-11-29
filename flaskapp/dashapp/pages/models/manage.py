@@ -1,7 +1,8 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_ag_grid as dag
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
@@ -15,6 +16,7 @@ page_id = get_page_id(__name__)
 
 def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
+    df = df_from_sqla(analysis.modelfiles)
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
@@ -31,13 +33,26 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     html.Div(
-                        get_table_modelfiles(page_id + 'table-modelfiles', analysis.modelfiles),
+                        dag.AgGrid(
+                            id=page_id + 'grid-modelfiles',
+                            rowData=df.to_dict('records'),
+                            columnDefs=[
+                                {
+                                    'field': 'name',
+                                    'checkboxSelection': True, 'headerCheckboxSelection': True,
+                                    'rowDrag': True,
+                                }
+                            ],
+                            getRowId='params.data.id',
+                            columnSize='responsiveSizeToFit',
+                            dashGridOptions={'rowSelection': 'multiple'},
+                        ),
                         id=page_id + 'div-table-modelfiles'
                     ),
-                ], width=6),
+                ], width=4),
                 dbc.Col([
                     'Display the OEP curve of the selected model file',
-                ], width=6),
+                ], width=8),
             ]),
         ], className='div-standard')
     ])

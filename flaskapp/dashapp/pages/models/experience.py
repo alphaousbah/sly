@@ -1,7 +1,8 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_ag_grid as dag
 import dash_mantine_components as dmc
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
@@ -21,9 +22,22 @@ def layout(analysis_id):
     analysis = db.session.get(Analysis, analysis_id)
 
     if analysis.histolossfiles:
-        table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)
+        grid_lossfiles = dag.AgGrid(
+            id=page_id + 'grid-lossfiles',
+            rowData=df_from_sqla(analysis.histolossfiles).sort_values('id', ascending=False).to_dict('records'),
+            columnDefs=[
+                {'field': 'id', 'hide': True},
+                {'field': 'name'},
+                {'field': 'vintage'},
+            ],
+            getRowId='params.data.id',
+            defaultColDef={'flex': True, 'sortable': True, 'filter': True, 'floatingFilter': True},
+            columnSize='responsiveSizeToFit',
+            style={'height': 400},
+            className='ag-theme-alpine custom',
+        )
     else:
-        table_lossfiles = 'No loss files added to the analysis'
+        grid_lossfiles = 'The analysis has no available loss files'
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
@@ -36,14 +50,14 @@ def layout(analysis_id):
                 dbc.Col([
                     html.Div('1. Select a loss file:', className='h5 mb-3'),
                     html.Div(
-                        table_lossfiles,
-                        id=page_id + 'div-table-lossfiles',
+                        grid_lossfiles,
+                        id=page_id + 'div-grid-lossfiles',
                         className='mb-4',
                     ),
                     html.Div(id=page_id + 'div-model-parameters'),
                 ], width=6),
                 dbc.Col([
-                    html.Div(id=page_id + 'div-table-losses'),
+                    html.Div(id=page_id + 'div-grid-losses'),
                 ], width=6),
             ]),
         ], className='div-standard')
@@ -51,32 +65,39 @@ def layout(analysis_id):
 
 
 @callback(
-    Output(page_id + 'div-table-losses', 'children'),
-    Input(page_id + 'table-lossfiles', 'active_cell'),
+    Output(page_id + 'div-grid-losses', 'children'),
+    Input(page_id + 'grid-lossfiles', 'cellClicked'),
     config_prevent_initial_callbacks=True
 )
-def display_lossfile(active_cell):
-    if active_cell:
-        # Display the loss set
-        lossfile_id = active_cell['row_id']
-        lossfile = db.session.get(HistoLossFile, lossfile_id)
+def display_losses(cellClicked):
+    # Display the loss file losses
+    lossfile_id = cellClicked['rowId']
+    lossfile = db.session.get(HistoLossFile, lossfile_id)
 
-        table_losses = get_table_losses(page_id + 'table-losses', lossfile.losses)
+    grid_losses = dag.AgGrid(
+        id=page_id + 'grid-losses',
+        rowData=df_from_sqla(lossfile.losses).to_dict('records'),
+        columnDefs=[
+            {'field': 'year'},
+            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
+            {'field': 'loss', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
+            {'field': 'loss_ratio', 'valueFormatter': {'function': 'd3.format(".1%")(params.value)'}},
+        ],
+        columnSize='responsiveSizeToFit',
+    )
 
-        return html.Div([
-            html.Div('2. Selected loss file:', className='h5 mb-3'),
-            table_losses,
-        ]),
-
-    raise PreventUpdate
+    return html.Div([
+        html.Div('2. Selected set of losses:', className='h5 mb-3'),
+        grid_losses,
+    ]),
 
 
 @callback(
     Output(page_id + 'div-model-parameters', 'children'),
-    Input(page_id + 'table-losses', 'data'),
+    Input(page_id + 'grid-losses', 'rowData'),
 )
-def display_model_parameters(data):
-    df = pd.DataFrame(data)
+def display_model_parameters(rowData):
+    df = pd.DataFrame(rowData)
     df['year'] = df['year'].astype(int)
     year_min = min(df['year'])
     year_max = max(df['year'])
@@ -120,16 +141,16 @@ def display_model_parameters(data):
 @callback(
     Output(page_id + 'select-end-modeling-period', 'data'),
     Input(page_id + 'select-start-modeling-period', 'value'),
-    State(page_id + 'table-losses', 'data'),
+    State(page_id + 'grid-losses', 'rowData'),
 )
-def update_options_year_max(value, data):
+def update_options_year_max(value, rowData):
     year_min = value
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(rowData)
     year_max = int(max(df['year']))
 
-    data = [{'value': year, 'label': year} for year in list(range(year_min + 1, year_max + 1))]
+    rowData = [{'value': year, 'label': year} for year in list(range(year_min + 1, year_max + 1))]
 
-    return data
+    return rowData
 
 
 @callback(
@@ -138,10 +159,10 @@ def update_options_year_max(value, data):
     Input(page_id + 'select-start-modeling-period', 'value'),
     Input(page_id + 'select-end-modeling-period', 'value'),
     State(page_id + 'store', 'data'),
-    State(page_id + 'table-losses', 'data'),
+    State(page_id + 'grid-losses', 'rowData'),
 )
-def display_model(value_year_min, value_year_max, data_store, data_table):
-    df = pd.DataFrame(data_table)
+def display_model(value_year_min, value_year_max, data, rowData):
+    df = pd.DataFrame(rowData)
     df['loss_ratio'] = df['loss_ratio'].astype(float)
     df['year'] = df['year'].astype(int)
 
@@ -222,9 +243,9 @@ def display_model(value_year_min, value_year_max, data_store, data_table):
         ]),
     ]),
 
-    data_store = data_store | param_lognorm  # Merge the 2 dictionaries with the '|' operator
+    data = data | param_lognorm  # Merge the 2 dictionaries with the '|' operator
 
-    return layout, data_store
+    return layout, data
 
 
 @callback(
@@ -268,11 +289,14 @@ def save_loss_model(n_clicks, data, value):
         db.session.add(yearloss)
     db.session.commit()  # Commit after the loop for DB performance
 
-    table_yearlosses = dash_table.DataTable(
-        data=df.to_dict('records'),
-        css=get_datatable_css(),
-        style_header=get_datatable_style_header(),
-        style_cell=get_datatable_style_cell(),
+    grid_yearlosses = dag.AgGrid(
+        id=page_id + 'grid-yearlosses',
+        rowData=df.to_dict('records'),
+        columnDefs=[
+            {'field': 'year'},
+            {'field': 'amount', 'valueFormatter': {'function': 'd3.format(".1%")(params.value)'}},
+        ],
+        columnSize='responsiveSizeToFit',
     )
 
-    return table_yearlosses, True
+    return grid_yearlosses, True

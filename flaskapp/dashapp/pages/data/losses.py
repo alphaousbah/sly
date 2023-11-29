@@ -1,7 +1,8 @@
 import dash
-from dash import html, dcc, dash_table, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_ag_grid as dag
 from flaskapp.dashapp.pages.utils import *
 from flaskapp.extensions import db
 from flaskapp.models import *
@@ -42,13 +43,7 @@ def layout(analysis_id):
                             style={'width': '100%', 'height': 300},
                             className='mb-2',
                         ),
-                        dbc.Button('Load', id=page_id + 'btn-save', className='mb-2 button'),
-                        dbc.Alert(
-                            'The loss file has been loaded',
-                            id=page_id + 'alert-save',
-                            is_open=False,
-                            duration=4000,
-                        ),
+                        dbc.Button('Save', id=page_id + 'btn-save', className='mb-2 button'),
                     ]),
                 ]),
             ]),
@@ -76,41 +71,58 @@ def layout(analysis_id):
             dbc.Row([
                 dbc.Col([
                     html.Div(
-                        get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles),
-                        id=page_id + 'div-table-lossfiles'
+                        dag.AgGrid(
+                            id=page_id + 'grid-lossfiles',
+                            rowData=df_from_sqla(analysis.histolossfiles).to_dict('records'),
+                            columnDefs=[
+                                {'field': 'id', 'hide': True},
+                                {'field': 'name', 'checkboxSelection': True, 'headerCheckboxSelection': True},
+                                {'field': 'vintage'},
+                            ],
+                            getRowId='params.data.id',
+                            defaultColDef={'flex': True, 'sortable': True, 'filter': True, 'floatingFilter': True},
+                            columnSize='responsiveSizeToFit',
+                            dashGridOptions={'rowSelection': 'multiple'},
+                            className='ag-theme-alpine custom',
+                        ),
                     ),
-                ], width=6),
+                ], width=4),
                 dbc.Col([
-                    html.Div(id=page_id + 'div-table-losses'),
-                ], width=6),
+                    html.Div(id=page_id + 'div-losses'),
+                ], width=8),
             ]),
         ], className='div-standard')
     ])
 
 
 @callback(
-    Output(page_id + 'modal-add-lossfile', 'is_open'),
+    Output(page_id + 'modal-add-lossfile', 'is_open', allow_duplicate=True),
     Input(page_id + 'btn-add', 'n_clicks'),
-    State(page_id + 'modal-add-lossfile', 'is_open'),
+    config_prevent_initial_callbacks=True
 )
-def toggle_modal(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open
+def toggle_modal(n_clicks):
+    return True
 
 
 @callback(
-    Output(page_id + 'alert-save', 'is_open'),
-    Output(page_id + 'div-table-lossfiles', 'children', allow_duplicate=True),
+    Output(page_id + 'modal-add-lossfile', 'is_open'),
+    Output(page_id + 'grid-lossfiles', 'rowData', allow_duplicate=True),
+    Output(page_id + 'text-area', 'value'),
+    Output(page_id + 'input-vintage', 'value'),
+    Output(page_id + 'input-name', 'value'),
     Input(page_id + 'btn-save', 'n_clicks'),
     State(page_id + 'store', 'data'),
     State(page_id + 'text-area', 'value'),
     State(page_id + 'input-vintage', 'value'),
     State(page_id + 'input-name', 'value'),
-    State(page_id + 'btn-save', 'is_open'),
     config_prevent_initial_callbacks=True
 )
-def save_lossfile(n_clicks, data, value, vintage, name, is_open):
+def save_lossfile(n_clicks, data, value, vintage, name):
+    # TODO: Add checking the input data properly and informing the user
+    # TODO: Add informing the user if the input data is incorrect using a dbc.Alert
+    if not (value and vintage and name):
+        raise PreventUpdate
+
     # Save the new loss file in the database
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
@@ -125,7 +137,8 @@ def save_lossfile(n_clicks, data, value, vintage, name, is_open):
     df_losses = pd.read_csv(StringIO(value), sep='\t')
     df_losses['loss_ratio'] = df_losses['loss_ratio'].str.replace(',', '.').astype(float)
 
-    # Loop through the rows of a dataframe: https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
+    # Loop through the rows of a dataframe
+    # https://stackoverflow.com/questions/16476924/how-to-iterate-over-rows-in-a-dataframe-in-pandas
     for index, row in df_losses.iterrows():
         loss = HistoLoss(
             lossfile_id=lossfile.id,
@@ -137,51 +150,58 @@ def save_lossfile(n_clicks, data, value, vintage, name, is_open):
         db.session.add(loss)
     db.session.commit()  # Commit after the loop for DB performance
 
-    # Update the loss files table after adding the new loss file
-    table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)
+    # Update the loss files grid
+    rowData = df_from_sqla(analysis.histolossfiles).to_dict('records')
 
-    return not is_open, table_lossfiles
+    return False, rowData, None, None, None
 
 
 @callback(
-    Output(page_id + 'div-table-losses', 'children', allow_duplicate=True),
-    Input(page_id + 'table-lossfiles', 'active_cell'),
+    Output(page_id + 'div-losses', 'children', allow_duplicate=True),
+    Input(page_id + 'grid-lossfiles', 'cellClicked'),
     config_prevent_initial_callbacks=True
 )
-def display_losses(active_cell):
-    if active_cell:
-        # https://stackoverflow.com/questions/55157682/hover-data-and-click-data-from-dash-table-on-dash
-        lossfile_id = active_cell['row_id']
-        lossfile = db.session.get(HistoLossFile, lossfile_id)
+def display_losses(cellClicked):
+    lossfile_id = cellClicked['rowId']
+    lossfile = db.session.get(HistoLossFile, lossfile_id)
 
-        table_losses = get_table_losses(page_id + 'table-losses', lossfile.losses)
+    grid_losses = dag.AgGrid(
+        id=page_id + 'grid-oep',
+        rowData=df_from_sqla(lossfile.losses).to_dict('records'),
+        columnDefs=[
+            {'field': 'year'},
+            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
+            {'field': 'loss', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
+            {'field': 'loss_ratio', 'valueFormatter': {'function': 'd3.format(".1%")(params.value)'}},
+        ],
+        columnSize='responsiveSizeToFit',
+    )
 
-        return table_losses
-
-    raise PreventUpdate
+    return grid_losses
 
 
 @callback(
-    Output(page_id + 'div-table-lossfiles', 'children'),
-    Output(page_id + 'div-table-losses', 'children'),
+    Output(page_id + 'grid-lossfiles', 'rowData'),
+    Output(page_id + 'div-losses', 'children'),
     Input(page_id + 'btn-delete', 'n_clicks'),
     State(page_id + 'store', 'data'),
-    State(page_id + 'table-lossfiles', 'selected_row_ids'),
+    State(page_id + 'grid-lossfiles', 'selectedRows'),
 )
-def delete_lossfiles(n_clicks, data, selected_row_ids):
-    if n_clicks is None or selected_row_ids is None:
-        raise PreventUpdate
+def delete_lossfiles(n_clicks, data, selectedRows):
+    if n_clicks is None or selectedRows is None:
+        return no_update
 
+    # TODO: Inform the user that the deletion was successful
     analysis_id = data['analysis_id']
     analysis = db.session.get(Analysis, analysis_id)
 
     # Delete the selected loss files
-    for lossfile_id in selected_row_ids:
-        lossfile = db.session.get(HistoLossFile, lossfile_id)
+    for lossfile in selectedRows:
+        lossfile = db.session.get(HistoLossFile, lossfile['id'])
         db.session.delete(lossfile)
     db.session.commit()  # Commit after the loop for DB performance
 
-    # Update the loss files table
-    table_lossfiles = get_table_lossfiles(page_id + 'table-lossfiles', analysis.histolossfiles)
+    # Update the loss files grid
+    rowData = df_from_sqla(analysis.histolossfiles).to_dict('records')
 
-    return table_lossfiles, None
+    return rowData, None

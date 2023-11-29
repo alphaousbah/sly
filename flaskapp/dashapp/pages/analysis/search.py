@@ -13,9 +13,8 @@ page_id = get_page_id(__name__)
 
 
 def layout():
-
     if Analysis.query.all():
-        df = df_from_query(Analysis.query.all()).sort_values(by='id', ascending=False)
+        df = df_from_sqla(Analysis.query.all()).sort_values(by='id', ascending=False)
 
         for col in ['quote', 'name']:
             df[col] = '[' + df[col] + '](/dashapp/analysis/view/' + df['id'].astype(str) + ')'
@@ -42,12 +41,13 @@ def layout():
                             {'field': 'id', 'hide': True},
                             {'field': 'quote', 'cellRenderer': 'markdown', 'checkboxSelection': True},
                             {'field': 'name', 'cellRenderer': 'markdown'},
-                            {'field': 'client'}
+                            {'field': 'client'},
                         ],
                         getRowId='params.data.id',
                         defaultColDef={
                             'flex': True, 'sortable': True, 'filter': True, 'floatingFilter': True,
                         },
+                        columnSize='responsiveSizeToFit',
                         dashGridOptions={'rowSelection': 'multiple'},
                         className='ag-theme-alpine custom',
                     ),
