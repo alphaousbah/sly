@@ -1,5 +1,6 @@
 """
 Commands for testing:
+
 rm .\migrations\; flask db init; flask db migrate; flask db upgrade; python
 from app import app; app.app_context().push(); from flaskapp.extensions import *; from flaskapp.models import *; session = db.session
 
@@ -58,7 +59,7 @@ Resources:
 
 from flaskapp.extensions import db
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import validates, relationship, backref
 
 
 class Analysis(db.Model):
@@ -67,6 +68,28 @@ class Analysis(db.Model):
     name = Column(String(50))
     quote = Column(Integer)
     client = Column(String(50))
+
+    # Validate the input data
+    # https://docs.sqlalchemy.org/en/20/orm/mapped_attributes.html#simple-validators
+    @validates('name')
+    def validate_name(self, key, value):
+        if value is None or not value:
+            raise ValueError('The analysis name must be entered')
+        return value
+
+    @validates('quote')
+    def validate_quote(self, key, value):
+        if value is None or not value:
+            raise ValueError('The quote number must be entered')
+        if not str(value).isdigit():
+            raise ValueError('The quote number must be an integer')
+        return value
+
+    @validates('client')
+    def validate_client(self, key, value):
+        if value is None or not value:
+            raise ValueError('The analysis client must be entered')
+        return value
 
     # Define the 1-to-many relationship between Analysis and Layer, HistoLossFile, PremiumFile, RiskProfileFile, ModelFile, PricingRelationship, ResultFile
     layers = relationship('Layer', back_populates='analysis', cascade='all, delete-orphan')
@@ -91,6 +114,21 @@ class Layer(db.Model):
     deductible = Column(Integer)
     limit = Column(Integer)
     display_order = Column(Integer)
+
+    # Validate the input data
+    @validates('name')
+    def validate_name(self, key, value):
+        if value is None or not value:
+            raise ValueError('The layer name must be entered')
+        return value
+
+    @validates('premium', 'deductible', 'limit')
+    def validate_int_col(self, key, value):
+        if value is None:
+            raise ValueError('The premiums, deductibles and limits must be entered for all layers')
+        if not str(value).isdigit():
+            raise ValueError('The premiums, deductibles and limits must all be integers')
+        return value
 
     # Define the 1-to-many relationship between Analysis and Layer
     analysis_id = Column(Integer, ForeignKey(Analysis.id))

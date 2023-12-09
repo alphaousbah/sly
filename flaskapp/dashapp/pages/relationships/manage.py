@@ -58,9 +58,9 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
-        get_nav_bottom(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
+        own_nav_bottom(__name__, analysis.id),
 
         html.Div([
             dbc.Row([

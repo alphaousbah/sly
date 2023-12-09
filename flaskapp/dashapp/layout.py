@@ -1,11 +1,11 @@
 import dash
 from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
-from flaskapp.dashapp.pages.utils import get_nav_top
+from flaskapp.dashapp.pages.utils import own_nav_top
 
 layout = html.Div([
     dcc.Store(id='app_store', data={}, storage_type='session'),
-    get_nav_top(),
+    own_nav_top(),
     dash.page_container,
 ])
 

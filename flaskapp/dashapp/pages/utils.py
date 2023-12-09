@@ -41,7 +41,7 @@ import numpy as np
 import pandas as pd
 
 
-def get_nav_top():
+def own_nav_top():
     return dbc.Navbar(
         dbc.Container([
             html.A(
@@ -89,7 +89,7 @@ def get_nav_top():
     )
 
 
-def get_title(module, analysis_name):
+def own_title(module, analysis_name):
     directory_name = get_directory(module)['directory']
     page_name = get_directory(module)['page']
 
@@ -106,7 +106,7 @@ def get_title(module, analysis_name):
     return title
 
 
-def get_nav_middle(module, analysis_id):
+def own_nav_middle(module, analysis_id):
     directory_name = get_directory(module)['directory']
 
     nav_middle = dbc.Nav([
@@ -138,7 +138,7 @@ def get_chapter_target(chapter):
             return 'manage'
 
 
-def get_nav_bottom(module, analysis_id):
+def own_nav_bottom(module, analysis_id):
     directory_name = get_directory(module)['directory']
 
     nav_bottom = dbc.Nav([
@@ -148,7 +148,7 @@ def get_nav_bottom(module, analysis_id):
             active='exact'
         )
         for page in dash.page_registry.values()
-        if get_navloc(page['module']) == 'bottom' and str(page['path']).startswith('/' + directory_name)
+        if own_navloc(page['module']) == 'bottom' and str(page['path']).startswith('/' + directory_name)
     ],
         pills=True,
         className='nav_bottom',
@@ -184,7 +184,7 @@ def get_directory(module):
     return {'directory': directory_name, 'page': page_name}
 
 
-def get_navloc(module):
+def own_navloc(module):
     page_name = str(module).split('.')[-1]
 
     match page_name:
@@ -231,7 +231,7 @@ def get_link_results(row):
         return 'Process to get results'
 
 
-def get_button(component_id, name):
+def own_button(component_id, name):
     return dbc.Button(
         name,
         id=component_id,

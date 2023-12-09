@@ -27,9 +27,9 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
-        get_nav_bottom(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
+        own_nav_bottom(__name__, analysis.id),
 
         html.Div([
             dbc.Row([
@@ -50,8 +50,8 @@ def layout(analysis_id):
                             'background': '#f5f8fa',
                         }
                     ),
-                    get_button(page_id + 'btn-save', 'Save Layers'),
-                    get_button(page_id + 'btn-delete', 'Delete Layers'),
+                    own_button(page_id + 'btn-save', 'Save Layers'),
+                    own_button(page_id + 'btn-delete', 'Delete Layers'),
                 ], width=5),
                 dbc.Col([
                     html.Div(id=page_id + 'div-layers-modified'),
@@ -59,22 +59,31 @@ def layout(analysis_id):
             ]),
             dbc.Row([
                 dbc.Col([
+                    # https://www.ag-grid.com/react-data-grid/cell-data-types/
                     dag.AgGrid(
                         id=page_id + 'grid-layers',
                         rowData=df.to_dict('records'),
                         columnDefs=[
                             {'field': 'id', 'hide': True},
+                            {'field': 'analysis_id', 'hide': True},
+                            {'field': 'display_order', 'hide': True},
                             {
                                 'field': 'name',
                                 'checkboxSelection': True, 'headerCheckboxSelection': True,
                                 'rowDrag': True,
                             },
-                            {'field': 'premium', 'valueFormatter': {'function': 'd3.format(",d")(params.value)'}},
-                            {'field': 'deductible', 'valueFormatter': {'function': '(params.value) + "%"'}},
-                            {'field': 'limit', 'valueFormatter': {'function': '(params.value) + "%"'}},
-                            {'field': 'analysis_id'},
-                            {'field': 'display_order'},
-                            # {'field': 'display_order', 'hide': True},
+                            {
+                                'field': 'premium',
+                                'valueFormatter': {'function': 'd3.format(",d")(params.value)'}
+                            },
+                            {
+                                'field': 'deductible',
+                                'valueFormatter': {'function': '(params.value) + "%"'}
+                            },
+                            {
+                                'field': 'limit',
+                                'valueFormatter': {'function': '(params.value) + "%"'}
+                            },
                         ],
                         getRowId='params.data.id',
                         defaultColDef={
@@ -115,11 +124,11 @@ for i in [1, 2, 3, 4, 5]:
 
         for i in range(n_layers):
             # Set the layers default parameters values
-            name = ''
+            name = 'Enter a name'
             premium = 0
             deductible = 0
             limit = 0
-            display_order = 999  # Set display_order to 999 so that the new layers are displayed in last position
+            display_order = 999  # Set display_order to 999 so that the new layers are displayed in the last position
 
             layer = Layer(
                 name=name,
@@ -197,7 +206,6 @@ def delete_layers(n_clicks, selectedRows, data):
 def inform_layers_modified(cellValueChanged):
     alert = dbc.Alert(
         'The layers have been modified. Save the changes with the Save button',
-        id=page_id + 'alert-modified',
         color='danger',
         className='text-center',
     )
@@ -211,20 +219,24 @@ def inform_layers_modified(cellValueChanged):
     config_prevent_initial_callbacks=True
 )
 def save_layers(n_clicks, virtualRowData):
-    for row in virtualRowData:
-        layer = db.session.get(Layer, row['id'])
-        layer.name = row['name']
-        layer.premium = int(row['premium'])
-        layer.deductible = int(row['deductible'])
-        layer.limit = int(row['limit'])
-        layer.display_order = virtualRowData.index(row)
-    db.session.commit()  # Commit after the loop for DB performance
+    try:
+        for row in virtualRowData:
+            layer = db.session.get(Layer, row['id'])
+            layer.name = row['name']
+            layer.premium = row['premium']
+            layer.deductible = row['deductible']
+            layer.limit = row['limit']
+            layer.display_order = virtualRowData.index(row)
+        db.session.commit()  # Commit after the loop for DB performance and input data checking in bulk
 
-    alert = dbc.Alert(
-        'The changes have been saved',
-        id=page_id + 'alert-saved',
-        color='success',
-        duration=3000,
-        className='text-center',
-    )
+        alert = dbc.Alert(
+            'The changes have been saved',
+            className='text-center',
+        )
+    except ValueError as e:
+        alert = dbc.Alert(
+            str(e),
+            color='danger',
+            className='text-center',
+        )
     return alert

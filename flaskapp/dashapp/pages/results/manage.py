@@ -22,15 +22,15 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
-        get_nav_bottom(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
+        own_nav_bottom(__name__, analysis.id),
 
         html.Div([
             dbc.Row([
                 dbc.Col([
-                    get_button(page_id + 'btn-process', 'Process'),
-                    get_button(page_id + 'btn-delete', 'Delete'),
+                    own_button(page_id + 'btn-process', 'Process'),
+                    own_button(page_id + 'btn-delete', 'Delete'),
                     dcc.Loading(
                         html.Div(
                             dag.AgGrid(

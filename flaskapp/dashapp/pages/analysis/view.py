@@ -17,8 +17,8 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
 
         html.Div([
             dbc.Row([
@@ -29,7 +29,11 @@ def layout(analysis_id):
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label('AGIR Quote', html_for=page_id + 'input-quote', width=2),
-                                    dbc.Input(id=page_id + 'input-quote', value=analysis.quote),
+                                    dbc.Input(
+                                        id=page_id + 'input-quote',
+                                        placeholder='Enter a value',
+                                        type='number',
+                                    ),
                                 ]),
                             ], className='mb-2'),
                             dbc.Row([
@@ -47,12 +51,7 @@ def layout(analysis_id):
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Button('Update', id=page_id + 'btn-update', className='button'),
-                                    dbc.Alert(
-                                        "The analysis has been updated",
-                                        id=page_id + 'alert-save',
-                                        is_open=False,
-                                        duration=4000,
-                                    ),
+                                    html.Div(id=page_id + 'div-inform'),
                                 ]),
                             ]),
                         ]),
@@ -65,22 +64,32 @@ def layout(analysis_id):
 
 
 @callback(
-    Output(page_id + 'alert-save', 'is_open'),
+    Output(page_id + 'div-inform', 'children'),
     Input(page_id + 'btn-update', 'n_clicks'),
     State(page_id + 'store', 'data'),
     State(page_id + 'input-quote', 'value'),
     State(page_id + 'input-name', 'value'),
     State(page_id + 'input-client', 'value'),
-    State(page_id + 'alert-save', 'is_open'),
     config_prevent_initial_callbacks=True
 )
-def update_analysis(n_clicks, data, quote, name, client, is_open):
+def update_analysis(n_clicks, data, quote, name, client):
     analysis_id = data['analysis_id']
-
     analysis = db.session.get(Analysis, analysis_id)
-    analysis.quote = quote
-    analysis.name = name
-    analysis.client = client
-    db.session.commit()
 
-    return not is_open
+    try:
+        analysis.quote = quote
+        analysis.name = name
+        analysis.client = client
+        db.session.commit()
+
+        return dbc.Alert(
+            'The analysis has been updated',
+            color='success',
+            duration=4000,
+        )
+
+    except (TypeError, ValueError) as e:
+        return dbc.Alert(
+            str(e),
+            color='danger',
+        )

@@ -14,7 +14,7 @@ page_id = get_page_id(__name__)
 
 def layout():
     if Analysis.query.all():
-        df = df_from_sqla(Analysis.query.all()).sort_values(by='id', ascending=False)
+        df = df_from_sqla(Analysis.query.order_by(Analysis.id.desc()).all())
 
         for col in ['quote', 'name']:
             df[col] = '[' + df[col] + '](/dashapp/analysis/view/' + df['id'].astype(str) + ')'

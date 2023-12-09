@@ -44,6 +44,7 @@ def layout(analysis_id):
                             className='mb-2',
                         ),
                         dbc.Button('Save', id=page_id + 'btn-save', className='mb-2 button'),
+                        dbc.Button('Clear', id=page_id + 'btn-clear', className='mb-2 button'),
                     ]),
                 ]),
             ]),
@@ -56,16 +57,16 @@ def layout(analysis_id):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
-        get_nav_bottom(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
+        own_nav_bottom(__name__, analysis.id),
 
         html.Div([
             dbc.Row([
                 dbc.Col([
                     modal_add_lossfile,
-                    get_button(page_id + 'btn-add', 'Add'),
-                    get_button(page_id + 'btn-delete', 'Delete'),
+                    own_button(page_id + 'btn-add', 'Add'),
+                    own_button(page_id + 'btn-delete', 'Delete'),
                 ])
             ]),
             dbc.Row([
@@ -110,9 +111,9 @@ def toggle_modal(n_clicks):
 @callback(
     Output(page_id + 'modal-add-lossfile', 'is_open'),
     Output(page_id + 'grid-lossfiles', 'rowData', allow_duplicate=True),
-    Output(page_id + 'text-area', 'value'),
-    Output(page_id + 'input-vintage', 'value'),
-    Output(page_id + 'input-name', 'value'),
+    Output(page_id + 'text-area', 'value', allow_duplicate=True),
+    Output(page_id + 'input-vintage', 'value', allow_duplicate=True),
+    Output(page_id + 'input-name', 'value', allow_duplicate=True),
     Input(page_id + 'btn-save', 'n_clicks'),
     State(page_id + 'store', 'data'),
     State(page_id + 'text-area', 'value'),
@@ -120,7 +121,7 @@ def toggle_modal(n_clicks):
     State(page_id + 'input-name', 'value'),
     config_prevent_initial_callbacks=True
 )
-def save_lossfile(n_clicks, data, value, vintage, name):
+def save_lossfile(n_clicks, data, value, vintage, name):    
     # TODO: Add checking the input data properly and informing the user
     # TODO: Add informing the user if the input data is incorrect using a dbc.Alert
     if not (value and vintage and name):
@@ -157,6 +158,18 @@ def save_lossfile(n_clicks, data, value, vintage, name):
     rowData = df_from_sqla(analysis.histolossfiles).to_dict('records')
 
     return False, rowData, None, None, None
+
+
+@callback(
+    Output(page_id + 'input-vintage', 'value'),
+    Output(page_id + 'input-name', 'value'),
+    Output(page_id + 'text-area', 'value'),
+    Input(page_id + 'btn-clear', 'n_clicks'),
+)
+def clear_modal(n_clicks):
+    if not n_clicks:
+        return no_update, no_update, no_update
+    return None, None, None
 
 
 @callback(

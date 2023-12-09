@@ -75,7 +75,7 @@ def layout(analysis_id, resultfile_id=None):
         Standard deviation  Standard deviation  ''                  ''
         Model File 1        PP Model File 1     ''                  '' 
         Model File 2        PP Model File 1     ''                  ''
-        ...
+        ...                 ...                 ''                  ''
 
         """
 
@@ -92,7 +92,7 @@ def layout(analysis_id, resultfile_id=None):
         Standard deviation  Standard deviation  ''                  ''          ''          ''
         Model File 1        PP Model File 1     ''                  ''          ''          ''
         Model File 2        PP Model File 1     ''                  ''          ''          ''
-        ...
+        ...                 ...                 ''                  ''          ''          ''
         
         """
 
@@ -135,9 +135,9 @@ def layout(analysis_id, resultfile_id=None):
 
     return html.Div([
         dcc.Store(id=page_id + 'store', data={'analysis_id': analysis_id, 'resultfile_id': resultfile_id}),
-        get_title(__name__, analysis.name),
-        get_nav_middle(__name__, analysis.id),
-        get_nav_bottom(__name__, analysis.id),
+        own_title(__name__, analysis.name),
+        own_nav_middle(__name__, analysis.id),
+        own_nav_bottom(__name__, analysis.id),
 
         html.Div([
             dbc.Row([
@@ -157,14 +157,14 @@ def layout(analysis_id, resultfile_id=None):
                             'domLayout': 'autoHeight',
                             'pinnedBottomRowData': df_summary.to_dict('records'),
                         },
-                        style={'height': 500},
+                        csvExportParams={'fileName': f'Results {resultfile.name}.csv'},
                         className='ag-theme-alpine custom mb-2',
                     ),
                 ]),
             ]),
             dbc.Row([
                 dbc.Col([
-
+                    own_button(page_id + 'btn-export', 'Export Results to CSV'),
                 ]),
             ]),
             dbc.Row([
@@ -184,3 +184,13 @@ def layout(analysis_id, resultfile_id=None):
             ]),
         ], className='div-standard')
     ])
+
+
+@callback(
+    Output(page_id + 'grid-oep', 'exportDataAsCsv'),
+    Input(page_id + 'btn-export', 'n_clicks'),
+)
+def export_data_to_csv(n_clicks):
+    if n_clicks:
+        return True
+    return False
